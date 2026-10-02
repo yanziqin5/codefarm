@@ -1,0 +1,3605 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>码上农场 CodeFarm - 用编程经营你的农场</title>
+<style>
+/* ============ 基础 ============ */
+* { margin:0; padding:0; box-sizing:border-box; }
+:root{
+  --bg:#0d1220; --panel:#161f33; --panel2:#1c2740; --border:#2a3854;
+  --text:#e6edf3; --dim:#8b98b3; --dim2:#5c6b8a;
+  --green:#4ade80; --blue:#60a5fa; --yellow:#facc15; --orange:#fb923c;
+  --red:#f87171; --purple:#c084fc; --cyan:#22d3ee;
+}
+html,body{height:100%;}
+body{
+  background:
+    radial-gradient(1200px 550px at 88% -12%, rgba(96,165,250,.16), transparent 60%),
+    radial-gradient(1000px 700px at -8% 45%, rgba(74,222,128,.09), transparent 55%),
+    radial-gradient(800px 600px at 55% 115%, rgba(34,211,238,.08), transparent 60%),
+    radial-gradient(1px 1px at 12% 22%, rgba(255,255,255,.22) 50%, transparent 51%),
+    radial-gradient(1px 1px at 31% 62%, rgba(255,255,255,.15) 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 68% 18%, rgba(255,255,255,.18) 50%, transparent 51%),
+    radial-gradient(1px 1px at 82% 70%, rgba(255,255,255,.13) 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 45% 85%, rgba(255,255,255,.14) 50%, transparent 51%),
+    var(--bg);
+  background-size: auto, auto, auto, 210px 210px, 260px 260px, 300px 300px, 240px 240px, 280px 280px, auto;
+  color:var(--text);
+  font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;
+  overflow:hidden; user-select:none;
+}
+button{ font-family:inherit; cursor:pointer; }
+.hidden{ display:none !important; }
+
+/* ============ 启动画面 ============ */
+#bootScreen{
+  position:fixed; inset:0; z-index:100; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:28px;
+  background:
+    radial-gradient(1200px 600px at 70% -10%, rgba(74,222,128,.12), transparent 60%),
+    radial-gradient(900px 500px at 10% 110%, rgba(96,165,250,.12), transparent 60%),
+    var(--bg);
+}
+.boot-logo{ text-align:center; }
+.boot-logo h1{
+  font-size:54px; letter-spacing:2px; font-weight:800;
+  background:linear-gradient(90deg,#4ade80,#22d3ee,#60a5fa,#c084fc,#4ade80);
+  background-size:300% 100%;
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  animation:titleFlow 6s linear infinite;
+}
+@keyframes titleFlow{ to{ background-position:300% 0; } }
+.boot-logo .sub{ color:var(--dim); margin-top:10px; font-size:15px; letter-spacing:4px; }
+.lang-cards{ display:flex; gap:22px; }
+.lang-card{
+  width:190px; padding:26px 20px; text-align:center;
+  background:var(--panel); border:1px solid var(--border); border-radius:16px;
+  transition:all .18s; position:relative; overflow:hidden;
+}
+.lang-card:hover{ transform:translateY(-6px); border-color:var(--green); box-shadow:0 12px 40px rgba(74,222,128,.15); }
+.lang-card .icon{ font-size:40px; }
+.lang-card .name{ font-size:20px; font-weight:700; margin:10px 0 6px; }
+.lang-card .desc{ font-size:12px; color:var(--dim); line-height:1.7; }
+.lang-card .tag{
+  position:absolute; top:12px; right:12px; font-size:11px; padding:2px 8px;
+  border-radius:20px; background:rgba(74,222,128,.15); color:var(--green);
+}
+.boot-tip{ color:var(--dim2); font-size:13px; }
+
+/* ============ 主界面 ============ */
+#gameScreen{ height:100%; display:flex; flex-direction:column; }
+header{
+  height:56px; flex:none; display:flex; align-items:center; gap:18px;
+  padding:0 20px; background:rgba(22,31,51,.82); backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(42,56,84,.65); box-shadow:0 1px 0 rgba(74,222,128,.07), 0 8px 24px rgba(0,0,0,.25);
+}
+header .game-title{ font-size:17px; font-weight:800; letter-spacing:1px;
+  background:linear-gradient(90deg,#4ade80,#22d3ee); -webkit-background-clip:text; background-clip:text; color:transparent; }
+header .chapter-badge{ font-size:12px; color:var(--dim); background:var(--panel2); padding:5px 12px; border-radius:20px; border:1px solid var(--border); }
+header .spacer{ flex:1; }
+.hud-item{ display:flex; align-items:center; gap:6px; font-size:14px; color:var(--dim); background:var(--panel2); padding:6px 14px; border-radius:20px; border:1px solid var(--border); }
+.hud-item b{ color:var(--yellow); font-size:15px; }
+.hud-item.star-item b{ color:var(--yellow); }
+select.lang-select{
+  background:var(--panel2); color:var(--text); border:1px solid var(--border);
+  border-radius:8px; padding:7px 12px; font-size:13px; outline:none; cursor:pointer;
+}
+#btnChapter,#btnFree,#btnSound{ background:var(--panel2); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:7px 14px; font-size:13px; transition:all .15s; }
+#btnSound{ padding:7px 10px; }
+#btnChapter:hover,#btnFree:hover,#btnSound:hover{ border-color:var(--blue); box-shadow:0 0 14px rgba(96,165,250,.25); transform:translateY(-1px); }
+#btnChapter:active,#btnFree:active,#btnSound:active{ transform:scale(.94); }
+select.lang-select{ transition:all .15s; }
+select.lang-select:active{ transform:scale(.96); }
+
+main{ flex:1; display:flex; gap:0; min-height:0; }
+
+/* ============ 地图区 ============ */
+#mapPanel{ flex:none; width:calc(100% - 477px); min-width:300px; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; background:
+  radial-gradient(900px 550px at 28% 18%, rgba(74,222,128,.07), transparent 60%),
+  radial-gradient(700px 500px at 78% 82%, rgba(96,165,250,.08), transparent 60%),
+  radial-gradient(1px 1px at 15% 30%, rgba(255,255,255,.16) 50%, transparent 51%),
+  radial-gradient(1px 1px at 55% 15%, rgba(255,255,255,.12) 50%, transparent 51%),
+  radial-gradient(1.2px 1.2px at 85% 45%, rgba(255,255,255,.13) 50%, transparent 51%),
+  var(--bg);
+  background-size:auto, auto, 190px 190px, 240px 240px, 220px 220px, auto; }
+#mapCanvas{ display:block; border-radius:14px; box-shadow:0 0 0 1px rgba(74,222,128,.12), 0 24px 70px rgba(0,0,0,.6), 0 0 60px rgba(74,222,128,.06); }
+.map-hint{ margin-top:14px; font-size:12px; color:var(--dim2); letter-spacing:1px; text-shadow:0 0 12px rgba(74,222,128,.25); }
+
+/* ============ 分隔条 ============ */
+#splitter{ flex:none; width:10px; cursor:col-resize; background:rgba(74,222,128,.09); border-left:1px solid rgba(74,222,128,.12); transition:background .2s; position:relative; z-index:5; user-select:none; touch-action:none; }
+#splitter:hover, #splitter.active{ background:rgba(74,222,128,.32); }
+#splitter::after{ content:''; position:absolute; left:50%; top:0; bottom:0; width:2px; margin-left:-1px; background:rgba(74,222,128,.4); border-radius:2px; }
+#splitter::before{ content:''; position:absolute; left:50%; top:50%; width:4px; height:34px; margin:-17px 0 0 -2px; background:rgba(74,222,128,.5); border-radius:3px; opacity:0; transition:opacity .2s; }
+#splitter:hover::before, #splitter.active::before{ opacity:1; }
+
+/* ============ 右侧面板 ============ */
+#rightPanel{ flex:1; min-width:430px; display:flex; flex-direction:column; border-left:1px solid rgba(74,222,128,.12); background:linear-gradient(90deg, rgba(74,222,128,.04), transparent 8%), var(--panel); min-height:0; }
+
+/* 委托面板 */
+#missionPanel{ flex:none; padding:16px 20px; border-bottom:1px solid var(--border); background:linear-gradient(180deg, rgba(74,222,128,.05), transparent); }
+#missionPanel .lv-name{ font-size:16px; font-weight:800; display:flex; align-items:center; gap:10px; }
+#missionPanel .lv-name .num{ font-size:12px; color:var(--green); background:rgba(74,222,128,.12); padding:3px 10px; border-radius:20px; }
+#missionPanel .story{ font-size:13px; color:var(--dim); line-height:1.7; margin-top:8px; }
+.goal-row{ display:flex; align-items:center; gap:8px; margin-top:10px; flex-wrap:wrap; }
+.goal-chip{ font-size:12px; color:var(--text); background:var(--panel2); border:1px solid var(--border); padding:4px 10px; border-radius:8px; }
+.goal-chip.ok{ border-color:var(--green); color:var(--green); }
+.goal-chip.fail{ border-color:var(--red); color:var(--red); }
+.opt-row{ margin-top:10px; font-size:12px; color:var(--dim2); }
+.opt-row b{ color:var(--cyan); }
+
+/* 自由模式面板 */
+#freePanel{ flex:none; padding:8px 20px 6px; border-bottom:1px solid var(--border); background:linear-gradient(180deg, rgba(250,204,21,.05), transparent); }
+#freePanel .head-row{ display:flex; align-items:center; gap:10px; margin-bottom:5px; }
+#freePanel .free-head{ display:flex; align-items:center; }
+#freePanel .free-money{ font-size:14px; color:var(--dim); background:rgba(250,204,21,.1); border:1px solid rgba(250,204,21,.3); padding:4px 12px; border-radius:20px; }
+#freePanel .free-money b{ color:var(--yellow); font-size:15px; }
+#freePanel .free-sub{ font-size:12px; color:var(--dim); margin-top:3px; line-height:1.5; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#freePanel .free-label{ font-size:11.5px; color:var(--dim2); margin-top:6px; margin-bottom:3px; letter-spacing:1px; }
+.free-inv{ display:flex; gap:4px; flex-wrap:wrap; }
+.inv-chip{ font-size:11.5px; padding:3px 9px; border-radius:8px; background:var(--panel2); border:1px solid var(--border); color:var(--text); }
+.inv-chip.locked{ color:var(--dim2); border-style:dashed; }
+.free-tech{ display:grid; grid-template-columns:1fr 1fr; gap:5px; }
+.tech-btn{ text-align:left; font-size:11.5px; padding:5px 10px; border-radius:9px; background:var(--panel2); border:1px solid var(--border); color:var(--text); transition:all .15s; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.tech-btn:hover:not(:disabled){ border-color:var(--yellow); box-shadow:0 0 10px rgba(250,204,21,.2); }
+.tech-btn:disabled{ opacity:.4; cursor:not-allowed; }
+.tech-done{ font-size:12.5px; color:var(--green); }
+.free-weather{ margin:0; padding:4px 10px; background:#13213b; border:1px solid var(--border); border-radius:8px; font-size:11.5px; color:var(--dim); display:flex; align-items:center; gap:6px; flex:1; min-width:0; white-space:nowrap; overflow:hidden; }
+.free-weather b{ color:var(--text); }
+.free-hint{ margin-top:5px; font-size:11.5px; color:var(--dim2); line-height:1.5; max-height:74px; overflow-y:auto; padding-right:4px; }
+.free-hint code{ color:var(--cyan); font-family:Consolas,monospace; }
+
+/* 代码区 */
+#editorPanel{ flex:1; display:flex; flex-direction:column; min-height:180px; }
+.editor-tabs{ flex:none; display:flex; align-items:center; gap:8px; padding:8px 20px 0; }
+.editor-tabs .tab{ font-size:12px; padding:6px 12px; border-radius:8px 8px 0 0; color:var(--dim); background:transparent; border:none; }
+.editor-tabs .tab.active{ color:var(--green); background:var(--panel2); border:1px solid var(--border); border-bottom:none; }
+.editor-tabs .spacer{ flex:1; }
+.speed-group{ display:flex; gap:4px; }
+.speed-btn{ font-size:11px; padding:4px 10px; border-radius:6px; border:1px solid var(--border); background:var(--panel2); color:var(--dim); }
+.speed-btn.active{ color:var(--cyan); border-color:var(--cyan); }
+
+#editorWrap{ position:relative; flex:1; margin:0 20px; background:linear-gradient(180deg, #0e182c, #0d1526); border:1px solid rgba(96,165,250,.22); border-radius:10px; overflow:hidden; display:flex; min-height:140px; box-shadow:0 0 24px rgba(96,165,250,.06), inset 0 1px 0 rgba(255,255,255,.04); }
+#lineNums{
+  width:44px; flex:none; padding:12px 6px; text-align:right; overflow:hidden;
+  font-family:Consolas,"Courier New",monospace; font-size:14px; line-height:24px;
+  color:var(--dim2); background:#0b1220; border-right:1px solid var(--border); user-select:none;
+}
+#lineNums .cur{ color:var(--green); font-weight:700; }
+#lineNums .err{ color:var(--red); font-weight:700; }
+.codeArea{ position:relative; flex:1; overflow:hidden; }
+#hlLayer{
+  position:absolute; inset:0; margin:0; padding:12px 14px; overflow:hidden;
+  font-family:Consolas,"Courier New",monospace; font-size:14px; line-height:24px;
+  white-space:pre; color:var(--text); pointer-events:none; word-break:normal;
+}
+#hlLayer .cur-line{ background:rgba(74,222,128,.10); box-shadow:-14px 0 0 rgba(74,222,128,.10), 14px 0 0 rgba(74,222,128,.10); border-radius:2px; }
+#hlLayer .err-line{ background:rgba(248,113,113,.10); box-shadow:-14px 0 0 rgba(248,113,113,.10), 14px 0 0 rgba(248,113,113,.10); }
+#codeInput{
+  position:absolute; inset:0; width:100%; height:100%; resize:none; border:none; outline:none;
+  background:transparent; color:transparent; caret-color:#e6edf3;
+  font-family:Consolas,"Courier New",monospace; font-size:14px; line-height:24px;
+  padding:12px 14px; white-space:pre; overflow:auto; tab-size:4;
+}
+#codeInput::selection{ background:rgba(96,165,250,.25); }
+#hlLayer .hl-k{ color:#c678dd; font-weight:600; }
+#hlLayer .hl-s{ color:#98c379; }
+#hlLayer .hl-c{ color:#5c6370; font-style:italic; }
+#hlLayer .hl-a{ color:#61afef; }
+#hlLayer .hl-n{ color:#d19a66; }
+
+/* 控制台 */
+#consoleWrap{ flex:none; height:150px; margin:0 20px 10px; background:linear-gradient(180deg, #0c1324, #0b1220); border:1px solid rgba(96,165,250,.18); border-radius:10px; display:flex; flex-direction:column; overflow:hidden; box-shadow:inset 0 1px 0 rgba(255,255,255,.03); }
+#consoleHead{ flex:none; display:flex; align-items:center; gap:6px; padding:7px 14px; font-size:12px; color:var(--dim); background:var(--panel2); border-bottom:1px solid var(--border); }
+#consoleHead .dot{ width:8px; height:8px; border-radius:50%; background:var(--dim2); }
+#consoleHead .dot.ok{ background:var(--green); }
+#consoleHead .dot.err{ background:var(--red); }
+#consoleHead .dot.run{ background:var(--cyan); animation:pulse 1s infinite; }
+@keyframes pulse{ 50%{opacity:.3;} }
+#consoleOut{ flex:1; overflow-y:auto; padding:8px 14px; font-family:Consolas,"Courier New",monospace; font-size:12.5px; line-height:1.8; white-space:pre-wrap; word-break:break-all; }
+#consoleOut .log-ok{ color:var(--green); }
+#consoleOut .log-err{ color:var(--red); }
+#consoleOut .log-info{ color:var(--dim); }
+#consoleOut .log-print{ color:var(--text); }
+#consoleOut .log-warn{ color:var(--orange); }
+.hist-list{ max-height:320px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; margin:10px 0 4px; }
+.hist-item{ display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:9px; background:var(--panel2); border:1px solid var(--border); cursor:pointer; transition:all .15s; font-size:12.5px; }
+.hist-item:hover{ border-color:var(--green); transform:translateX(2px); }
+.hi-t{ color:var(--dim2); font-family:Consolas,monospace; font-size:11.5px; flex:none; }
+.hi-lang{ flex:none; font-size:11px; padding:1px 7px; border-radius:6px; background:rgba(96,165,250,.15); color:#8ab4f8; }
+.hi-st{ flex:none; }
+.hi-st.ok{ color:var(--green); } .hi-st.fail{ color:var(--red); }
+.hi-d{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--dim); }
+.hist-empty{ padding:24px 12px; text-align:center; color:var(--dim2); font-size:13px; }
+
+/* 按钮行 */
+#btnRow{ flex:none; display:flex; gap:10px; padding:0 20px 10px; }
+.btn{ flex:1; padding:11px 0; border-radius:10px; font-size:14px; font-weight:700; border:none; transition:all .15s; }
+#btnRun{ background:linear-gradient(135deg,#16a34a,#22c55e); color:#fff; }
+#btnRun:hover:not(:disabled){ filter:brightness(1.14); box-shadow:0 0 0 1px rgba(74,222,128,.5), 0 10px 30px rgba(34,197,94,.45); transform:translateY(-1px); }
+#btnRun:active:not(:disabled){ transform:translateY(0) scale(.97); }
+#btnReset{ background:var(--panel2); color:var(--dim); border:1px solid var(--border); }
+#btnReset:hover:not(:disabled){ color:var(--text); border-color:var(--dim); }
+#btnDebug{ background:var(--panel2); color:var(--green); border:1px solid var(--green); }
+#btnDebug.active{ background:var(--green); color:#0a1122; }
+#debugBar{ flex:none; display:flex; align-items:center; gap:8px; margin:0 20px 10px; padding:8px 12px; background:#141d33; border:1px solid var(--green); border-radius:8px; font-size:12px; color:var(--green); }
+#debugBar.hidden{ display:none; }
+#btnDebugExit{ flex:none; margin-left:auto; background:#2a1620; border:1px solid #e06c75; color:#e06c75; padding:5px 12px; border-radius:6px; font-size:12px; cursor:pointer; }
+#btnDebugExit:hover{ background:#3a1f2b; }
+.btn:disabled{ opacity:.45; cursor:not-allowed; }
+
+/* ============ 弹窗 ============ */
+.modal-mask{ position:fixed; inset:0; z-index:200; background:rgba(4,8,16,.75); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; }
+.modal{ width:430px; max-width:92vw; max-height:86vh; overflow-y:auto; background:linear-gradient(180deg, rgba(74,222,128,.05), transparent 40%), var(--panel); border:1px solid rgba(74,222,128,.18); border-radius:20px; padding:30px 32px; box-shadow:0 30px 90px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,255,255,.05); animation:pop .28s cubic-bezier(.2,1.4,.4,1); scrollbar-width:thin; }
+@keyframes pop{ from{ transform:scale(.92); opacity:0; } to{ transform:scale(1); opacity:1; } }
+
+/* 剧情对话 */
+#dialogModal .farmer{ display:flex; gap:16px; align-items:flex-start; }
+#dialogModal .farmer-avatar{ font-size:52px; line-height:1; }
+#dialogModal .speech{ flex:1; }
+#dialogModal .speech .who{ font-size:13px; color:var(--dim); margin-bottom:6px; }
+#dialogModal .speech .say{ font-size:15px; line-height:1.8; color:var(--text); }
+#dialogModal .dgoal{ margin-top:16px; background:var(--panel2); border:1px solid var(--border); border-radius:12px; padding:12px 16px; font-size:13px; color:var(--dim); line-height:1.9; }
+#dialogModal .dgoal b{ color:var(--green); }
+.modal-btn-row{ display:flex; gap:10px; margin-top:22px; }
+.help-sub{ font-size:12px; color:var(--dim); margin-bottom:10px; }
+.help-body{ max-height:62vh; overflow-y:auto; padding-right:8px; }
+.help-sec{ margin-bottom:14px; }
+.help-sec h3{ font-size:14px; color:var(--green); margin:0 0 6px; }
+.help-row{ display:grid; grid-template-columns:110px 1fr; gap:6px; font-size:12px; padding:4px 0; border-bottom:1px dashed rgba(255,255,255,.06); }
+.help-row .cname{ color:#e2b93c; font-weight:600; }
+.help-row .cdesc{ color:#c9d1d9; line-height:1.6; }
+.help-code{ background:#0d1526; border:1px solid rgba(96,165,250,.18); border-radius:6px; padding:8px 10px; font-family:Consolas,Menlo,monospace; font-size:12px; color:#a5d6ff; line-height:1.7; margin:4px 0; white-space:pre-wrap; word-break:break-all; }
+.help-tip{ font-size:12px; color:#7dd3fc; background:rgba(56,189,248,.08); border-radius:6px; padding:8px 10px; margin-top:8px; line-height:1.7; }
+.order-bar{ font-size:12px; color:#e2b93c; background:linear-gradient(90deg, rgba(250,204,21,.14), rgba(250,204,21,.04)); border:1px solid rgba(250,204,21,.3); border-radius:8px; padding:7px 10px; margin:8px 0; line-height:1.6; }
+.order-bar .ob-prog{ color:#fff; }
+.badge-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; max-height:420px; overflow:auto; padding:2px; }
+.badge-card{ background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:10px; padding:12px 10px; text-align:center; transition:all .2s; }
+.badge-card.owned{ background:linear-gradient(160deg, rgba(250,204,21,.16), rgba(96,165,250,.08)); border-color:rgba(250,204,21,.5); box-shadow:0 0 16px rgba(250,204,21,.18); }
+.badge-card.locked{ opacity:.45; filter:grayscale(.7); }
+.badge-icon{ font-size:26px; display:block; margin-bottom:4px; }
+.badge-name{ font-size:13px; font-weight:600; color:#fff; margin-bottom:2px; }
+.badge-desc{ font-size:11px; color:var(--muted); line-height:1.5; }
+.skin-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; max-height:420px; overflow:auto; padding:2px; }
+.skin-card{ background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:10px; padding:12px 8px; text-align:center; cursor:pointer; transition:all .2s; }
+.skin-card:hover{ border-color:var(--blue); transform:translateY(-2px); }
+.skin-card.active{ background:linear-gradient(160deg, rgba(96,165,250,.18), rgba(250,204,21,.08)); border-color:var(--blue); box-shadow:0 0 14px rgba(96,165,250,.25); }
+.skin-card.locked{ opacity:.45; filter:grayscale(.7); cursor:default; }
+.skin-swatch{ width:38px; height:38px; border-radius:50%; margin:0 auto 6px; box-shadow:inset 0 -4px 8px rgba(0,0,0,.3), 0 2px 6px rgba(0,0,0,.4); }
+.skin-name{ font-size:12px; font-weight:600; color:#fff; margin-bottom:2px; }
+.skin-desc{ font-size:10px; color:var(--muted); line-height:1.4; }
+.ex-list{ max-height:420px; overflow:auto; display:flex; flex-direction:column; gap:8px; padding:2px; }
+.ex-row{ display:flex; align-items:center; gap:10px; background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:10px; padding:10px 12px; transition:all .15s; }
+.ex-row:hover{ border-color:var(--blue); background:rgba(96,165,250,.07); }
+.ex-title{ font-size:13px; font-weight:600; color:#fff; margin-bottom:2px; }
+.ex-desc{ font-size:11px; color:var(--muted); line-height:1.4; }
+.ex-btn{ margin-left:auto; flex:none; background:var(--panel2); color:#fff; border:1px solid var(--border); border-radius:7px; padding:6px 12px; font-size:12px; cursor:pointer; transition:all .15s; }
+.ex-btn:hover{ border-color:var(--green); color:var(--green); }
+.ex-btn:active{ transform:scale(.94); }
+.stats-body{ display:flex; flex-direction:column; gap:8px; max-height:420px; overflow:auto; padding:2px; }
+.stats-sec{ background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:10px; padding:12px 14px; }
+.stats-sec h3{ font-size:13px; color:#7dd3fc; margin-bottom:8px; }
+.stats-row{ display:flex; justify-content:space-between; font-size:12px; color:var(--muted); padding:3px 0; line-height:1.5; }
+.stats-row b{ color:#fff; font-size:13px; }
+.stats-hint{ font-size:11px; color:var(--muted); opacity:.75; margin-top:8px; text-align:center; }
+.mbtn{ flex:1; padding:11px 0; border-radius:10px; font-size:14px; font-weight:700; border:none; }
+.mbtn.primary{ background:linear-gradient(135deg,#16a34a,#22c55e); color:#fff; }
+.mbtn.ghost{ background:var(--panel2); color:var(--dim); border:1px solid var(--border); }
+.mbtn:hover{ filter:brightness(1.1); }
+
+/* 结算 */
+#resultModal{ text-align:center; }
+#resultModal .r-stars{ font-size:52px; letter-spacing:8px; margin:10px 0 4px; }
+#resultModal .r-stars .star{ display:inline-block; opacity:.18; filter:grayscale(1); transform:scale(.8); }
+#resultModal .r-stars .star.on{ opacity:1; filter:none; transform:scale(1); animation:starPop .4s ease backwards; }
+@keyframes starPop{ from{ transform:scale(1.8) rotate(-20deg); opacity:0; } }
+#resultModal h2{ font-size:22px; }
+#resultModal .r-sub{ color:var(--dim); font-size:13px; margin-top:6px; }
+#resultModal .r-stats{ display:flex; gap:10px; margin:18px 0 4px; }
+.r-stat{ flex:1; background:var(--panel2); border:1px solid var(--border); border-radius:12px; padding:12px 8px; }
+.r-stat .v{ font-size:20px; font-weight:800; color:var(--cyan); }
+.r-stat .k{ font-size:11px; color:var(--dim); margin-top:4px; }
+.r-coin{ margin-top:14px; font-size:15px; color:var(--yellow); }
+.r-coin b{ font-size:20px; }
+.r-unlock{ margin-top:8px; font-size:13px; color:var(--green); }
+
+/* 章节选择 */
+.ch-sec{ grid-column:1 / -1; display:flex; align-items:center; gap:8px; margin-top:14px; padding:8px 12px; background:linear-gradient(90deg, rgba(74,222,128,.10), transparent); border-left:3px solid var(--green); border-radius:6px; font-size:14px; font-weight:700; color:var(--green); }
+.ch-sec:first-child{ margin-top:4px; }
+.ch-sec-title{ display:flex; align-items:center; gap:8px; }
+.ch-sec-state{ font-size:11px; font-weight:400; color:var(--dim); background:var(--panel2); border:1px solid var(--border); border-radius:6px; padding:1px 8px; }
+.ch-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.ch-cell{ background:var(--panel2); border:1px solid var(--border); border-radius:12px; padding:12px 8px; text-align:center; cursor:pointer; transition:all .15s; }
+.ch-cell:hover{ border-color:var(--blue); transform:translateY(-2px); }
+.ch-cell.locked{ opacity:.4; cursor:not-allowed; }
+.ch-cell .cn{ font-size:12px; color:var(--dim); }
+.ch-cell .cl{ font-size:14px; font-weight:700; margin-top:3px; }
+.ch-cell .cs{ font-size:13px; color:var(--yellow); letter-spacing:2px; margin-top:4px; }
+.ch-cell .cs .off{ color:var(--dim2); }
+
+/* 机器人冒烟动画 */
+@keyframes smoke{ from{ transform:translate(0,0) scale(.4); opacity:.9; } to{ transform:translate(6px,-16px) scale(1.4); opacity:0; } }
+
+/* 滚动条 */
+::-webkit-scrollbar{ width:8px; height:8px; }
+::-webkit-scrollbar-thumb{ background:#2a3854; border-radius:4px; }
+::-webkit-scrollbar-thumb:hover{ background:#3a4c74; }
+::-webkit-scrollbar-track{ background:transparent; }
+
+/* 响应式 */
+@media (max-width:1000px){
+  main{ flex-direction:column; overflow:auto; }
+  #rightPanel{ width:100%; border-left:none; border-top:1px solid var(--border); }
+  #splitter{ display:none; }
+  #mapPanel{ min-height:0; height:44vh; }
+  /* 手机触屏优化 */
+  body{ padding-bottom:env(safe-area-inset-bottom); }
+  #btnRow{ flex-wrap:wrap; gap:8px; }
+  #btnRow button{ min-height:44px; min-width:46px; font-size:15px; }
+  .main-nav button{ min-height:40px; min-width:44px; }
+  .tab-row button{ min-height:38px; font-size:15px; }
+  #codeInput{ font-size:15px; }
+  #helpPanel{ font-size:15px; }
+  #editorWrap{ min-height:170px; }
+  #consoleOut{ min-height:70px; }
+  .speed-btn{ min-height:34px; min-width:42px; }
+  #consoleOut{ font-size:13px; }
+  #tipModal .modal-box, #histModal .modal-box{ max-width:94vw; }
+  /* 顶栏换行压缩 */
+  header{ flex-wrap:wrap; gap:5px 8px; padding:7px 10px; }
+  .game-title{ font-size:15px; flex:none; }
+  .chapter-badge{ font-size:10px; max-width:150px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:none; }
+  header button{ font-size:12px; padding:4px 8px; flex:none; }
+  .lang-select{ font-size:11px; padding:3px 6px; max-width:96px; flex:none; }
+  .hud-item{ flex:none; }
+  #mapPanel{ min-height:0; height:44vh; max-height:560px; }
+  .hud-item{ font-size:13px; }
+}
+/* 手机/平板横屏：左右布局 */
+@media (max-height:520px) and (min-width:600px){
+  main{ flex-direction:row; }
+  #rightPanel{ width:min(480px,55%); border-top:none; border-left:1px solid var(--border); }
+  #mapPanel{ height:auto; min-height:0; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ 启动画面 ============ -->
+<div id="bootScreen">
+  <div class="boot-logo">
+    <h1>码上农场</h1>
+    <div class="sub">CODEFARM · 用代码经营农场，从零学会编程</div>
+  </div>
+  <div class="lang-cards">
+    <div class="lang-card" data-lang="python">
+      <div class="tag">推荐入门</div>
+      <div class="icon">🐍</div>
+      <div class="name" style="color:#4b8bbe">Python</div>
+      <div class="desc">语法最接近自然语言<br>最适合零基础入门</div>
+    </div>
+    <div class="lang-card" data-lang="javascript">
+      <div class="icon">🌐</div>
+      <div class="name" style="color:#f7df1e">JavaScript</div>
+      <div class="desc">网页开发必备<br>浏览器里直接运行</div>
+    </div>
+    <div class="lang-card" data-lang="cpp">
+      <div class="icon">⚙️</div>
+      <div class="name" style="color:#659ad2">C++</div>
+      <div class="desc">编程语言祖师爷之一<br>性能与底层之王</div>
+    </div>
+  </div>
+  <div class="boot-tip">选择一门语言，开启你的第一个农场委托</div>
+</div>
+
+<!-- ============ 主界面 ============ -->
+<div id="gameScreen" class="hidden">
+  <header>
+    <div class="game-title">🌾 码上农场</div>
+    <div class="chapter-badge" id="chapterBadge">第 1 章 · 顺序执行</div>
+    <div class="spacer"></div>
+    <div class="hud-item star-item">⭐ <b id="hudStars">0</b> / <span id="hudStarTotal" style="color:var(--dim2)">27</span></div>
+    <div class="hud-item">🪙 <b id="hudCoins">0</b></div>
+    <button id="btnSound" title="音效开关">🔊</button>
+    <button id="btnChapter" title="章节地图">🗺 章节</button>
+    <button id="btnFree" title="自由模式：开放农场自动化经营">🆓 自由模式</button>
+    <select id="langSelect" class="lang-select" title="切换编程语言">
+      <option value="python">🐍 Python</option>
+      <option value="javascript">🌐 JavaScript</option>
+      <option value="cpp">⚙️ C++</option>
+    </select>
+  </header>
+
+  <main>
+    <!-- 地图 -->
+    <div id="mapPanel">
+      <canvas id="mapCanvas" width="520" height="520"></canvas>
+      <div class="map-hint">🌱 机器人会按你写的代码，一格一格地执行</div>
+    </div>
+    <div id="splitter" title="← 拖动可调整地图宽度 →"></div>
+
+    <!-- 右侧 -->
+    <div id="rightPanel">
+      <div id="missionPanel">
+        <div class="lv-name"><span class="num" id="lvNum">委托 1</span><span id="lvName">第一块田</span></div>
+        <div class="story" id="lvStory"></div>
+        <div class="goal-row" id="goalRow"></div>
+        <div class="opt-row" id="optRow"></div>
+      </div>
+
+      <!-- 自由模式面板 -->
+      <div id="freePanel" class="hidden">
+        <div class="head-row">
+          <span class="lv-name">🆓 自由农场</span>
+          <div class="free-weather" id="freeWeather"></div>
+          <span class="free-money">🪙 <b id="freeMoney">10</b></span>
+        </div>
+        <div class="order-bar hidden" id="orderBar"></div>
+        <div class="free-sub">写脚本让机器人自动种收卖，攒钱解锁科技，实现全自动农场</div>
+        <div class="free-label">📦 库存</div>
+        <div class="free-inv" id="freeInv"></div>
+        <div class="free-label">🔬 科技（花金币解锁）</div>
+        <div class="free-tech" id="freeTech"></div>
+        <div class="free-hint" id="freeHint"></div>
+      </div>
+
+      <div id="editorPanel">
+        <div class="editor-tabs">
+          <button class="tab active" id="tabCode">代码</button>
+          <button class="tab" id="tabHelp">指令手册</button>
+          <button class="tab" id="tabBadge" title="成就徽章墙">🏅 成就</button>
+          <div class="spacer"></div>
+          <div class="speed-group">
+            <button class="speed-btn" data-speed="700">慢</button>
+            <button class="speed-btn active" data-speed="430">中</button>
+            <button class="speed-btn" data-speed="220">快</button>
+          </div>
+        </div>
+        <div id="editorWrap" style="margin-top:8px;">
+          <div id="lineNums"></div>
+          <div class="codeArea">
+            <pre id="hlLayer" aria-hidden="true"></pre>
+            <textarea id="codeInput" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" wrap="off"></textarea>
+          </div>
+        </div>
+        <div id="helpPanel" class="hidden" style="flex:1; overflow-y:auto; margin:8px 20px 0; padding:16px; background:#0d1526; border:1px solid var(--border); border-radius:10px; font-size:13px; line-height:2; color:var(--dim);"></div>
+
+        <div id="consoleWrap" style="margin-top:8px;">
+          <div id="consoleHead"><span class="dot" id="consoleDot"></span><span id="consoleTitle">控制台</span></div>
+          <div id="consoleOut"></div>
+        </div>
+
+        <div id="btnRow">
+          <button id="btnHelp" class="btn">📖 指令手册</button>
+          <button id="btnSkin" class="btn" title="机器人皮肤">🎨 皮肤</button>
+          <button id="btnExample" class="btn" title="示例代码库">📚 示例</button>
+          <button id="btnStats" class="btn" title="数据统计">📊 数据</button>
+          <button id="btnHist" class="btn" title="运行历史（自动保存）">📜 历史</button>
+          <button id="btnDebug" class="btn">🐞 单步调试</button>
+          <button id="btnRun" class="btn">▶ 运行代码</button>
+          <button id="btnReset" class="btn">↺ 重置</button>
+        </div>
+        <div id="debugBar" class="hidden"><span>🐞 单步调试中：机器人会一行一行执行，每步等你确认</span><button id="btnDebugExit">✖ 退出调试</button></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ============ 剧情弹窗 ============ -->
+<div id="dialogModal" class="modal-mask hidden">
+  <div class="modal">
+    <div class="farmer">
+      <div class="farmer-avatar">👨‍🌾</div>
+      <div class="speech">
+        <div class="who">农场主 · 老周</div>
+        <div class="say" id="dialogSay"></div>
+      </div>
+    </div>
+    <div class="dgoal" id="dialogGoal"></div>
+    <div class="modal-btn-row">
+      <button class="mbtn ghost" id="btnDialogTip">📖 知识点</button>
+      <button class="mbtn primary" id="btnDialogGo">开始委托 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 结算弹窗 ============ -->
+<div id="resultModal" class="modal-mask hidden">
+  <div class="modal">
+    <div class="r-stars" id="rStars"></div>
+    <h2 id="rTitle"></h2>
+    <div class="r-sub" id="rSub"></div>
+    <div class="r-stats">
+      <div class="r-stat"><div class="v" id="rSteps"></div><div class="k">执行步数</div></div>
+      <div class="r-stat"><div class="v" id="rLines"></div><div class="k">代码行数</div></div>
+      <div class="r-stat"><div class="v" id="rOpt"></div><div class="k">最优步数</div></div>
+    </div>
+    <div class="r-coin">获得 🪙 <b id="rCoins">0</b></div>
+    <div class="r-unlock" id="rUnlock"></div>
+    <div class="modal-btn-row">
+      <button class="mbtn ghost" id="btnResultRetry">↺ 再试一次</button>
+      <button class="mbtn primary" id="btnResultNext">下一个委托 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 成就徽章墙 ============ -->
+<div id="badgeModal" class="modal-mask hidden">
+  <div class="modal" style="max-width:560px;">
+    <h2 style="font-size:18px; margin-bottom:4px;">🏅 成就徽章墙 <span style="font-weight:400;font-size:12px;opacity:.6;margin-left:6px;" id="badgeCount"></span></h2>
+    <div class="help-sub">达成条件自动解锁，进度会存档</div>
+    <div class="badge-grid" id="badgeWall"></div>
+    <div class="modal-btn-row">
+      <button class="mbtn primary" id="btnBadgeClose">知道了</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 机器人皮肤 ============ -->
+<div id="skinModal" class="modal-mask hidden">
+  <div class="modal" style="max-width:520px;">
+    <h2 style="font-size:18px; margin-bottom:4px;">🎨 机器人皮肤</h2>
+    <div class="help-sub">点击已解锁的皮肤即可换上，进度会存档</div>
+    <div class="skin-grid" id="skinWall"></div>
+    <div class="modal-btn-row">
+      <button class="mbtn primary" id="btnSkinClose">知道了</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 示例代码库 ============ -->
+<div id="exModal" class="modal-mask hidden">
+  <div class="modal" style="max-width:640px;">
+    <h2 style="font-size:18px; margin-bottom:4px;">📚 示例代码库 <span id="exLangTag" style="font-weight:400;font-size:12px;opacity:.6;margin-left:6px;"></span></h2>
+    <div class="help-sub">点「载入」把示例写进编辑器，运行看效果。关卡和自由模式都能用</div>
+    <div class="ex-list" id="exList"></div>
+    <div class="modal-btn-row">
+      <button class="mbtn primary" id="btnExClose">知道了</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 数据统计 ============ -->
+<div id="statsModal" class="modal-mask hidden">
+  <div class="modal" style="max-width:520px;">
+    <h2 style="font-size:18px; margin-bottom:4px;">📊 数据统计</h2>
+    <div class="help-sub">你的农场学习足迹</div>
+    <div class="stats-body" id="statsBody"></div>
+    <div class="modal-btn-row">
+      <button class="mbtn primary" id="btnStatsClose">知道了</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 运行历史 ============ -->
+<div id="histModal" class="modal-mask hidden">
+  <div class="modal" style="max-width:620px;">
+    <h2 style="font-size:18px; margin-bottom:4px;">📜 运行历史</h2>
+    <div class="help-sub">每次运行都会自动保存，点记录即可恢复到编辑器（最多保留 60 条）</div>
+    <div class="hist-list" id="histList"></div>
+    <div class="modal-btn-row">
+      <button class="mbtn ghost" id="btnHistClear">🗑 清空历史</button>
+      <button class="mbtn primary" id="btnHistClose">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 指令手册弹窗 ============ -->
+<div id="helpModal" class="modal-mask hidden">
+  <div class="modal" style="max-width:640px;">
+    <h2 style="font-size:18px; margin-bottom:4px;">📖 指令手册</h2>
+    <div class="help-sub">所有指令 · 三语言写法 · 常见套路（把示例代码抄到编辑器就能用）</div>
+    <div class="help-body" id="helpBody"></div>
+    <div class="modal-btn-row">
+      <button class="mbtn primary" id="btnHelpClose">知道了</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 知识点弹窗 ============ -->
+<div id="tipModal" class="modal-mask hidden">
+  <div class="modal">
+    <h2 style="font-size:18px; margin-bottom:12px;">📖 <span id="tipTitle"></span></h2>
+    <div id="tipBody" style="font-size:14px; line-height:2; color:var(--dim);"></div>
+    <div class="modal-btn-row">
+      <button class="mbtn primary" id="btnTipClose">知道了</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 章节弹窗 ============ -->
+<div id="chapterModal" class="modal-mask hidden">
+  <div class="modal" style="width:520px;">
+    <h2 style="font-size:18px;">🗺 委托地图</h2>
+    <div class="ch-grid" id="chGrid"></div>
+    <div class="modal-btn-row">
+      <button class="mbtn primary" id="btnChapterClose">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* =====================================================================
+ * 码上农场 CodeFarm —— 一个通过真实编程语言经营农场的教学游戏
+ * 引擎：自研转译执行器（语法真实，执行受控）
+ * ===================================================================== */
+
+/* ---------------- 语言定义 ---------------- */
+const LANGS = {
+  python: {
+    name:'Python', icon:'🐍', color:'#4b8bbe',
+    keywords:['def','for','in','range','if','else','elif','while','return','True','False','None','and','or','not','break'],
+    template: '# 机器人会按顺序执行你的每一条指令\n# 试试：前进到田边再种下玉米\n',
+    api: {
+      move:'move()',
+      turn_left:'turn_left()',
+      turn_right:'turn_right()',
+      plant:'plant("玉米")',
+      harvest:'harvest()',
+      sell:'sell()',
+      print:'print("你好，农场！")',
+      can_move:'can_move()',
+      is_ready:'is_ready()',
+      can_plant:'can_plant()',
+      water:'water()'
+    },
+    help:`<b style="color:var(--text)">可用的农场指令（Python 语法）</b><br>
+      <span style="color:#61afef">move()</span> — 向前走一格<br>
+      <span style="color:#61afef">turn_left()</span> / <span style="color:#61afef">turn_right()</span> — 左转 / 右转 90°<br>
+      <span style="color:#61afef">plant("作物名")</span> — 在当前格种下作物（玉米/萝卜/番茄/小麦）<br>
+      <span style="color:#61afef">harvest()</span> — 收获当前格已成熟的作物<br>
+      <span style="color:#61afef">sell()</span> — 在商店格卖出所有库存作物（自由模式）<br>
+      <span style="color:#61afef">print("内容")</span> — 在控制台输出内容<br>
+      <span style="color:#61afef">can_move()</span> — 判断前方能否走（用于 if）<br>
+      <span style="color:#61afef">is_ready()</span> — 判断当前格能否收获（用于 if）<br>
+      <span style="color:#61afef">can_plant()</span> — 判断当前格是不是空地农田、能否种（用于 if）<br>
+      <span style="color:#61afef">water()</span> — 给当前格正在生长的作物浇水 +2 成长（自由模式，干旱天救急）<br><br>
+      <span style="color:var(--dim2)">· 行尾不需要分号，缩进用 4 个空格<br>· 每行写一条指令，从上到下依次执行<br>· <span style="color:#c678dd"># 开头</span>是注释，机器人会跳过<br>· <span style="color:#c678dd">while True:</span> 可以写无限循环（自由模式自动农场）</span>`
+  },
+  javascript: {
+    name:'JavaScript', icon:'🌐', color:'#f7df1e',
+    keywords:['let','const','var','for','if','else','function','return','while','true','false','break'],
+    template: '// 机器人会按顺序执行你的每一条指令\n// 试试：前进到田边再种下玉米\n',
+    api: {
+      move:'move();',
+      turn_left:'turnLeft();',
+      turn_right:'turnRight();',
+      plant:'plant("玉米");',
+      harvest:'harvest();',
+      sell:'sell();',
+      print:'console.log("你好，农场！");',
+      can_move:'canMove();',
+      is_ready:'isReady();',
+      can_plant:'canPlant();',
+      water:'water();',
+      can_plant:'canPlant();'
+    },
+    help:`<b style="color:var(--text)">可用的农场指令（JavaScript 语法）</b><br>
+      <span style="color:#61afef">move();</span> — 向前走一格<br>
+      <span style="color:#61afef">turnLeft();</span> / <span style="color:#61afef">turnRight();</span> — 左转 / 右转 90°<br>
+      <span style="color:#61afef">plant("作物名");</span> — 在当前格种下作物（玉米/萝卜/番茄/小麦）<br>
+      <span style="color:#61afef">harvest();</span> — 收获当前格已成熟的作物<br>
+      <span style="color:#61afef">sell();</span> — 在商店格卖出所有库存作物（自由模式）<br>
+      <span style="color:#61afef">console.log("内容");</span> — 在控制台输出内容<br>
+      <span style="color:#61afef">canMove();</span> — 判断前方能否走（用于 if）<br>
+      <span style="color:#61afef">isReady();</span> — 判断当前格能否收获（用于 if）<br>
+      <span style="color:#61afef">canPlant();</span> — 判断当前格是不是空地农田、能否种（用于 if）<br>
+      <span style="color:#61afef">water();</span> — 给当前格正在生长的作物浇水 +2 成长（自由模式，干旱天救急）<br>
+      <span style="color:#61afef">canPlant();</span> — 判断当前格是不是空地农田、能否种（用于 if）<br>
+      <span style="color:#61afef">water();</span> — 给当前格正在生长的作物浇水 +2 成长（自由模式，干旱天救急）<br><br>
+      <span style="color:var(--dim2)">· 每条指令以分号 ; 结尾<br>· 每行写一条指令，从上到下依次执行<br>· <span style="color:#5c6370">// 开头</span>是注释，机器人会跳过<br>· <span style="color:#c678dd">while (true) { }</span> 可以写无限循环（自由模式自动农场）</span>`
+  },
+  cpp: {
+    name:'C++', icon:'⚙️', color:'#659ad2',
+    keywords:['int','void','for','if','else','while','return','true','false','break','using','namespace','include'],
+    template: '// 机器人会按顺序执行你的每一条指令\n// 试试：前进到田边再种下玉米\n',
+    api: {
+      move:'move();',
+      turn_left:'turnLeft();',
+      turn_right:'turnRight();',
+      plant:'plant("玉米");',
+      harvest:'harvest();',
+      sell:'sell();',
+      print:'print("你好，农场！");',
+      can_move:'canMove();',
+      is_ready:'isReady();',
+      can_plant:'canPlant();',
+      water:'water();',
+      can_plant:'canPlant();'
+    },
+    help:`<b style="color:var(--text)">可用的农场指令（C++ 语法）</b><br>
+      <span style="color:#61afef">move();</span> — 向前走一格<br>
+      <span style="color:#61afef">turnLeft();</span> / <span style="color:#61afef">turnRight();</span> — 左转 / 右转 90°<br>
+      <span style="color:#61afef">plant("作物名");</span> — 在当前格种下作物（玉米/萝卜/番茄/小麦）<br>
+      <span style="color:#61afef">harvest();</span> — 收获当前格已成熟的作物<br>
+      <span style="color:#61afef">sell();</span> — 在商店格卖出所有库存作物（自由模式）<br>
+      <span style="color:#61afef">print("内容");</span> — 在控制台输出内容<br>
+      <span style="color:#61afef">canMove();</span> — 判断前方能否走（用于 if）<br>
+      <span style="color:#61afef">isReady();</span> — 判断当前格能否收获（用于 if）<br>
+      <span style="color:#61afef">canPlant();</span> — 判断当前格是不是空地农田、能否种（用于 if）<br>
+      <span style="color:#61afef">water();</span> — 给当前格正在生长的作物浇水 +2 成长（自由模式，干旱天救急）<br>
+      <span style="color:#61afef">canPlant();</span> — 判断当前格是不是空地农田、能否种（用于 if）<br>
+      <span style="color:#61afef">water();</span> — 给当前格正在生长的作物浇水 +2 成长（自由模式，干旱天救急）<br><br>
+      <span style="color:var(--dim2)">· 每条指令以分号 ; 结尾<br>· 每行写一条指令，从上到下依次执行<br>· <span style="color:#5c6370">// 开头</span>是注释，机器人会跳过<br>· <span style="color:#c678dd">while (true) { }</span> 可以写无限循环（自由模式自动农场）</span>`
+  }
+};
+
+/* ---------------- 关卡数据 ---------------- */
+/* 地图字符：. 草地  R 机器人起点(朝右)  F 空地农田  C 成熟农田  X 石头  G 终点  ~ 河流  @ 传送门(两两配对)  K 羊(挡路)  B 贫瘠地(可走过不能种) */
+const LEVELS = [
+  {
+    id:1, name:'第一块田', chapter:1, chapterName:'顺序执行',
+    story:'欢迎来到码上农场！我是老周。东边那块田空了很久了，帮我种上一棵玉米——你要指挥机器人完成。记住：你写的每一行代码，机器人都会从上到下、一行一行地执行。',
+    goal:{ type:'plant', need:1, crop:'玉米' },
+    map:[
+      'R..F.',
+      '.....',
+      '.....'
+    ],
+    optimalSteps:4, optimalLines:4,
+    tip:{ title:'什么是顺序执行？', body:'程序是一行一行从上往下执行的，就像机器人一步步走路。<br><br>你写的：<br><span style="color:#61afef">move()</span><br><span style="color:#61afef">move()</span><br>机器人就会先走一步，再走一步——绝不会跳着来。<br><br>这就是编程世界里最基础也最重要的概念：<b style="color:var(--green)">顺序执行</b>。' }
+  },
+  {
+    id:2, name:'一畦玉米', chapter:1, chapterName:'顺序执行',
+    story:'好样的！这次东边空出三块田，都给我种上玉米。慢慢写，一行一行来，机器人会照办的。（提示：注意观察你的代码是不是有点重复了？）',
+    goal:{ type:'plant', need:3, crop:'玉米' },
+    map:[
+      'R..FFF',
+      '......',
+      '......'
+    ],
+    optimalSteps:8, optimalLines:8,
+    tip:{ title:'为什么编程要学"偷懒"？', body:'你有没有发现，种三棵玉米要写长长的一串几乎一样的代码？<br><br>如果种 100 棵呢？要写两百多行？<br><br>真正的程序员会用"循环"来解决这种重复。下一章，我们就来学它！<br><br><span style="color:var(--dim2)">先试试用笨办法通关，你很快就会发现重复代码的痛。</span>' }
+  },
+  {
+    id:3, name:'收割时节', chapter:1, chapterName:'顺序执行',
+    story:'种得好！玉米已经熟了。现在走到玉米田，把它收下来，然后送到仓库（金色格子）。',
+    goal:{ type:'both', plantNeed:0, harvestNeed:1, reach:true, crop:'玉米' },
+    map:[
+      'R..C..G',
+      '.......',
+      '.......'
+    ],
+    optimalSteps:7, optimalLines:7,
+    tip:{ title:'程序员的思考方式', body:'把大任务拆成小步骤，再一步步写出来——这叫"<b style="color:var(--green)">分解问题</b>"。<br><br>这个委托可以拆成：<br>1️⃣ 走到玉米田 → <span style="color:#61afef">move()×3</span><br>2️⃣ 收获 → <span style="color:#61afef">harvest()</span><br>3️⃣ 走到仓库 → <span style="color:#61afef">move()×3</span><br><br>编程的大部分工作，其实就是把问题拆成机器人能听懂的一小步一小步。' }
+  }
+,
+  {
+    id:4, name:'循环种田', chapter:2, chapterName:'循环',
+    story:'种得好！这次任务升级：东边有三块空田，中间都隔了一格。用笨办法得写一大堆重复代码——农场主建议你试试「循环」：让同一段代码自动重复执行。',
+    goal:{ type:'plant', need:3, crop:'玉米' },
+    map:[
+      'R.F.F.F',
+      '.......',
+      '.......'
+    ],
+    optimalSteps:9, optimalLines:4,
+    tip:{ title:'循环 for：让代码自己重复', body:'写 3 遍"走两格、种一棵"太累了，循环让你只写一遍：<br><br><b style="color:#61afef">Python</b><br><span style="color:#c678dd">for i in range(3):</span><br>&nbsp;&nbsp;&nbsp;&nbsp;move()<br>&nbsp;&nbsp;&nbsp;&nbsp;move()<br>&nbsp;&nbsp;&nbsp;&nbsp;plant("玉米")<br><br><b style="color:#61afef">JavaScript / C++</b><br><span style="color:#c678dd">for (let i=0; i&lt;3; i++) {</span><br>&nbsp;&nbsp;&nbsp;&nbsp;move();<br>&nbsp;&nbsp;&nbsp;&nbsp;move();<br>&nbsp;&nbsp;&nbsp;&nbsp;plant("玉米");<br><span style="color:#c678dd">}</span><br><br>这段代码的意思是："重复 3 次：走两格，种一棵"。<b style="color:var(--green)">循环 = 告诉程序重复做什么、重复几次</b>。' }
+  },
+  {
+    id:5, name:'循环收割', chapter:2, chapterName:'循环',
+    story:'玉米全熟了！三块田连在一起。先走到第一块田，然后用循环一口气收完——循环体里可以放好多条指令，它们会按顺序依次重复。',
+    goal:{ type:'harvest', need:3 },
+    map:[
+      'R..CCC.',
+      '.......',
+      '.......'
+    ],
+    optimalSteps:9, optimalLines:5,
+    tip:{ title:'循环体：一次循环可以做好几件事', body:'循环体（for 下面缩进的代码）里可以写多条指令，它们每轮都会按顺序执行：<br><br><b style="color:#61afef">Python</b><br><span style="color:#c678dd">for i in range(3):</span><br>&nbsp;&nbsp;&nbsp;&nbsp;harvest()<br>&nbsp;&nbsp;&nbsp;&nbsp;move()<br><br>每轮循环做两件事：<b>先收获当前格的玉米，再前进一步</b>。3 轮下来正好收完 3 块田。<br><br>先"走到位"（move 到第一块田），再开始循环——顺序很重要！' }
+  },
+  {
+    id:6, name:'循环大师', chapter:2, chapterName:'循环',
+    story:'循环这一章的最后一关！三块田还是隔一格分布，种完玉米后把机器人开到仓库（金色格子）。试试用循环把代码写得又短又漂亮——真正的程序员都这么干。',
+    goal:{ type:'both', plantNeed:3, harvestNeed:0, reach:true, crop:'玉米' },
+    map:[
+      'R.F.F.F.G',
+      '.........',
+      '.........'
+    ],
+    optimalSteps:11, optimalLines:6,
+    tip:{ title:'循环的价值：代码短 ≠ 功能少', body:'对比两种写法：<br><br>❌ 笨办法：<br>move(); move(); plant(); move(); move(); plant(); move(); move(); plant(); move(); move();<br>（11 行重复代码）<br><br>✅ 循环写法：<br><span style="color:#c678dd">for i in range(3):</span><br>&nbsp;&nbsp;&nbsp;&nbsp;move(); move(); plant("玉米")<br>move(); move()<br>（6 行，功能一模一样）<br><br>写 100 块田呢？笨办法要 300+ 行，循环只改一个数字。这就是<b style="color:var(--green)">程序员用循环偷懒的智慧</b>。' }
+  },
+  {
+    id:7, name:'聪明绕路', chapter:3, chapterName:'条件判断',
+    story:'前面有块大石头挡着路！机器人现在面朝右，但这次它要自己「看情况」决定怎么走：如果前方走得通就走，走不通就转向绕路。这就是程序里的条件判断——让代码自己选路。（新指令：turn_left() / turnLeft() 原地左转）',
+    goal:{ type:'both', plantNeed:0, harvestNeed:0, reach:true },
+    map:[
+      'R.X..',
+      '...G.',
+      '.....'
+    ],
+    optimalSteps:6, optimalLines:9,
+    tip:{ title:'if / else：让程序自己选路', body:'程序默认一条路走到底，但加上「条件」它就能自己判断：<br><br><b style="color:#61afef">Python</b><br><span style="color:#c678dd">if can_move():</span><br>&nbsp;&nbsp;&nbsp;&nbsp;move()<br><span style="color:#c678dd">else:</span><br>&nbsp;&nbsp;&nbsp;&nbsp;turn_left()<br><br><b style="color:#61afef">JavaScript / C++</b><br><span style="color:#c678dd">if (canMove()) {</span><br>&nbsp;&nbsp;&nbsp;&nbsp;move();<br><span style="color:#c678dd">} else {</span><br>&nbsp;&nbsp;&nbsp;&nbsp;turnLeft();<br><span style="color:#c678dd">}</span><br><br>意思是：<b style="color:var(--green)">如果前方能走，就走；否则，转向</b>。条件为真走 if，为假走 else——二选一。' }
+  },
+  {
+    id:8, name:'熟了就收', chapter:3, chapterName:'条件判断',
+    story:'玉米熟了三棵，但中间那棵还青着（小苗），不能收！让机器人自己判断：走到农田时，成熟了才收。',
+    goal:{ type:'harvest', need:2 },
+    map:[
+      'R.CUC.',
+      '......',
+      '......'
+    ],
+    optimalSteps:6, optimalLines:10,
+    tip:{ title:'is_ready()：检查作物熟没熟', body:'is_ready() 会返回一个「布尔值」：当前格的作物熟了就是 True（真），没熟就是 False（假）。<br><br><b style="color:#61afef">Python</b><br><span style="color:#c678dd">if is_ready():</span><br>&nbsp;&nbsp;&nbsp;&nbsp;harvest()<br><br><b style="color:#61afef">JavaScript / C++</b><br><span style="color:#c678dd">if (isReady()) {</span><br>&nbsp;&nbsp;&nbsp;&nbsp;harvest();<br><span style="color:#c678dd">}</span><br><br>地图里青绿色的小苗就是<b style="color:var(--green)">未成熟作物</b>，机器人不会去收它。' }
+  },
+  {
+    id:9, name:'条件大师', chapter:3, chapterName:'条件判断',
+    story:'老周的最后考验：绕开石头、只收熟玉米，最后开到仓库。一个代码里要判断两次——试试把 if 放进 if 里（嵌套）。',
+    goal:{ type:'both', plantNeed:0, harvestNeed:2, reach:true },
+    map:[
+      'R.CC.XG',
+      '........',
+      '........'
+    ],
+    optimalSteps:13, optimalLines:18,
+    tip:{ title:'嵌套 if：判断套判断', body:'if 里面还可以再放一个 if，就像穿了两层外套——外层判断「要不要绕路」，里层判断「熟没熟」。<br><br><b style="color:#61afef">Python</b><br><span style="color:#c678dd">if can_move():</span><br>&nbsp;&nbsp;&nbsp;&nbsp;move()<br><span style="color:#c678dd">else:</span><br>&nbsp;&nbsp;&nbsp;&nbsp;turn_left()<br>&nbsp;&nbsp;&nbsp;&nbsp;move()<br>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#c678dd">if is_ready():</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;harvest()<br><br>注意缩进！里层的 if 要比外层的 else 多缩进一层，这样程序才知道它属于谁。' }
+  },
+  { id:10, name:'召唤函数', chapter:4, chapterName:'函数',
+    story:'老周新委托：种田的步骤太多了，教你一个新招式——把几步动作打包成一个<b>函数</b>，以后喊它的名字就能执行。',
+    goal:{ type:'both', crop:'玉米', plantNeed:1, harvestNeed:0, reach:true },
+    map:[
+      'R.FG',
+      '....',
+      '....'
+    ],
+    optimalSteps:4, optimalLines:6,
+    tip:{ title:'函数：给代码起名字', body:'函数就是「把几步代码打包，起个名字，以后喊名字就能执行」。<br><br><b style="color:#61afef">Python</b><br><span style="color:#c678dd">def 种田():</span><br>&nbsp;&nbsp;&nbsp;&nbsp;move()<br>&nbsp;&nbsp;&nbsp;&nbsp;move()<br>&nbsp;&nbsp;&nbsp;&nbsp;plant("玉米")<br><span style="color:#c678dd">种田()</span><br><br><b style="color:#61afef">JavaScript</b><br><span style="color:#c678dd">function 种田() {</span><br>&nbsp;&nbsp;&nbsp;&nbsp;move();<br>&nbsp;&nbsp;&nbsp;&nbsp;move();<br>&nbsp;&nbsp;&nbsp;&nbsp;plant("玉米");<br><span style="color:#c678dd">}</span><br><span style="color:#c678dd">种田();</span><br><br><b style="color:#61afef">C++</b> 用 <span style="color:#c678dd">void 种田() { ... }</span><br><br><b style="color:var(--green)">def 种田():</b> 是「定义」，<b style="color:var(--green)">种田()</b> 是「调用」。先定义再调用，函数体里想写几步都行。' }
+  },
+  { id:11, name:'函数复用', chapter:4, chapterName:'函数',
+    story:'三块田要种！用同一个函数调用三次——这就是函数最大的价值：写一次，用很多次。',
+    goal:{ type:'both', crop:'玉米', plantNeed:3, harvestNeed:0, reach:true },
+    map:[
+      'RFFFG',
+      '.....',
+      '.....'
+    ],
+    optimalSteps:7, optimalLines:7,
+    tip:{ title:'复用：写一次，用 N 次', body:'把「走一步 + 种一棵」打包成函数，种几块田就调用几次：<br><br><b style="color:#61afef">Python</b><br><span style="color:#c678dd">def 种一块():</span><br>&nbsp;&nbsp;&nbsp;&nbsp;move()<br>&nbsp;&nbsp;&nbsp;&nbsp;plant("玉米")<br><span style="color:#c678dd">种一块()</span><br><span style="color:#c678dd">种一块()</span><br><span style="color:#c678dd">种一块()</span><br>move()<br><br><b style="color:var(--green)">如果以后要种 100 块田呢？</b>直接写要 200 行，函数版只多一行调用。<br><br>函数让代码：1️⃣ 更短 2️⃣ 更好读（名字说明用途）3️⃣ 改一处全变（比如把玉米换成萝卜，只改函数体）。' }
+  },
+  { id:12, name:'函数大师', chapter:4, chapterName:'函数',
+    story:'终极考验：函数 + 循环组合拳——函数里放一个 for 循环，一次调用干完一整排！',
+    goal:{ type:'both', crop:'玉米', plantNeed:4, harvestNeed:0, reach:true },
+    map:[
+      'RFFFFG',
+      '......',
+      '......'
+    ],
+    optimalSteps:9, optimalLines:7,
+    tip:{ title:'函数 + 循环：终极组合', body:'函数里可以放循环！这个函数一次调用就种完整排：<br><br><b style="color:#61afef">Python</b><br><span style="color:#c678dd">def 种一排():</span><br>&nbsp;&nbsp;&nbsp;&nbsp;for i in range(4):<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;move()<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;plant("玉米")<br><span style="color:#c678dd">种一排()</span><br>move()<br><br><b style="color:#61afef">JavaScript</b><br><span style="color:#c678dd">function 种一排() {</span><br>&nbsp;&nbsp;&nbsp;&nbsp;for (let i=0; i<4; i++) {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;move();<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;plant("玉米");<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br><span style="color:#c678dd">}</span><br><span style="color:#c678dd">种一排();</span><br><br><b style="color:var(--green)">函数负责「做什么」，循环负责「做几遍」</b>——两个大招合体，代码短得可怕。' }
+  }
+];
+
+/* ---------------- 自由模式数据 ---------------- */
+/* 地图字符：. 草地  R 起点(朝右)  F 农田  H 未开垦农田  X 石头  S 商店(卖货点) */
+const FREE_MAP = [
+  '......~~~......',
+  '......~~~......',
+  '..FFFF@~~~@FFFF',
+  'R.FFFF.~~~.FFFF',
+  '..FFFF.~~~.FFFF',
+  '..HHHH.~~~.HHHH',
+  '..HHHH.~~~.HHHH',
+  '..HHHH.~~~KHHHH',
+  '..SSX.B...SS...',
+  '...............',
+  '...............'
+];
+const CROP_PRICES = { '玉米':5, '萝卜':8, '番茄':15, '小麦':25, '草莓':40, '西瓜':80 };   // 卖出单价
+const CROP_UNLOCK = { '玉米':0, '萝卜':20, '番茄':60, '小麦':150, '草莓':300, '西瓜':600 }; // 解锁所需金币
+const SPRINKLER_COST = 500; // 自动洒水器科技
+const LAND_COST = 30;   // 开垦一块土地
+const FREE_MAX_STEPS = 800; // 单次运行步数上限
+
+let freeState = {
+  money: 10,
+  inventory: { '玉米':0, '萝卜':0, '番茄':0, '小麦':0, '草莓':0, '西瓜':0 },
+  unlocked: { '玉米':true, '萝卜':false, '番茄':false, '小麦':false, '草莓':false, '西瓜':false, '洒水器':false },
+  lands: 0,        // 已开垦块数
+  weather: 'sun',  // sun 晴天 / cloud 多云 / rain 下雨 / drought 干旱
+  totalSteps: 0,   // 累计步数（跨运行）
+  order: null,     // 当前订单 { crop, need, got, reward, expireAt }
+  ordersDone: 0,   // 完成订单数
+  plantedTotal: 0, // 累计种下作物数
+  totalEarned: 0   // 累计赚取金币（卖货+订单奖励）
+};
+const WEATHER_INFO = {
+  'sun':{ emoji:'☀️', name:'晴天', desc:'作物正常生长' },
+  'cloud':{ emoji:'⛅', name:'多云', desc:'作物正常生长' },
+  'rain':{ emoji:'🌧️', name:'下雨', desc:'作物生长速度翻倍！' },
+  'drought':{ emoji:'🌵', name:'干旱', desc:'作物停止生长，快用 water() 浇水' }
+};
+
+/* ---------------- 作物定义 ---------------- */
+const CROPS = {
+  '玉米':{ color:'#facc15', leaf:'#4ade80', grow:3 },
+  '萝卜':{ color:'#fb923c', leaf:'#4ade80', grow:4 },
+  '番茄':{ color:'#f87171', leaf:'#4ade80', grow:5 },
+  '小麦':{ color:'#eab308', leaf:'#a3e635', grow:6 },
+  '草莓':{ color:'#fb7185', leaf:'#4ade80', grow:7 },
+  '西瓜':{ color:'#34d399', leaf:'#16a34a', grow:8 }
+};
+
+/* ---------------- 状态 ---------------- */
+let state = {
+  lang:null, levelIdx:0, mode:'level',
+  stars:{},          // levelId -> 星数
+  coins:0,
+  best:{},           // levelId -> {steps,lines}
+  badges:[],         // 已解锁成就 id
+  skin:'default',    // 机器人皮肤 id
+  runCount:0,        // 成功运行次数
+  errorCount:0       // 出错次数（语法/运行时）
+};
+let rt = null;         // 当前运行时（关卡副本）
+let runtime = null;    // 别名（兼容）
+let runAbort = false;
+let debugMode = false;
+let debugResolve = null;
+let speed = 430;
+
+const $ = id => document.getElementById(id);
+
+/* ---------------- 存档 ---------------- */
+function saveGame(){
+  try{
+    let tab = 'code';
+    if($('tabHelp').classList.contains('active')) tab = 'help';
+    const mp = document.getElementById('mapPanel');
+    const splitW = mp ? Math.round(mp.offsetWidth) : null;
+    localStorage.setItem('codefarm2026', JSON.stringify({ lang:state.lang, stars:state.stars, coins:state.coins, best:state.best, mode:state.mode, levelIdx:state.levelIdx, badges:state.badges, skin:state.skin, runCount:state.runCount, errorCount:state.errorCount, free:freeState, tab, code:$('codeInput')?$('codeInput').value:'', splitW }));
+  }catch(e){}
+}
+function loadGame(){
+  try{
+    const raw = localStorage.getItem('codefarm2026');
+    if(raw){
+      const s = JSON.parse(raw);
+      if(s && typeof s === 'object'){
+        if(s.lang) state.lang = s.lang;
+        if(s.stars && typeof s.stars==='object') state.stars = s.stars;
+        if(s.coins) state.coins = s.coins;
+        if(s.best && typeof s.best==='object') state.best = s.best;
+        if(s.mode) state.mode = s.mode;
+        if(Array.isArray(s.badges)) state.badges = s.badges;
+        if(typeof s.skin === 'string') state.skin = s.skin;
+        if(typeof s.runCount === 'number') state.runCount = s.runCount;
+        if(typeof s.errorCount === 'number') state.errorCount = s.errorCount;
+        if(typeof s.levelIdx === 'number') state.levelIdx = s.levelIdx;
+        state.tab = (s.tab === 'help' || s.tab === 'code') ? s.tab : 'code';
+        state.restoreCode = (typeof s.code === 'string') ? s.code : '';
+        state.splitW = (typeof s.splitW === 'number') ? s.splitW : null;
+        if(s.free && typeof s.free==='object'){
+          freeState = Object.assign(freeState, s.free);
+          freeState.inventory = Object.assign({ '玉米':0, '萝卜':0, '番茄':0, '小麦':0, '草莓':0, '西瓜':0 }, freeState.inventory || {});
+          freeState.unlocked = Object.assign({ '玉米':true, '萝卜':false, '番茄':false, '小麦':false, '草莓':false, '西瓜':false, '洒水器':false }, freeState.unlocked || {});
+          if(!freeState.weather) freeState.weather = 'sun';
+          if(!freeState.totalSteps) freeState.totalSteps = 0;
+        }
+      }
+    }
+  }catch(e){}
+}
+
+/* ---------------- 地图 ---------------- */
+const DIRS = [ {x:1,y:0}, {x:0,y:1}, {x:-1,y:0}, {x:0,y:-1} ]; // 右 下 左 上
+
+function parseMap(rows){
+  const grid = [];
+  let robot = null;
+  for(let y=0; y<rows.length; y++){
+    const line = [];
+    for(let x=0; x<rows[y].length; x++){
+      const ch = rows[y][x];
+      let cell;
+      switch(ch){
+        case 'R': cell = {type:'grass', robotStart:true}; robot={x,y,dir:0}; break;
+        case 'F': cell = {type:'farm', crop:null, cropName:null}; break;
+        case 'H': cell = {type:'fallow'}; break;
+        case 'S': cell = {type:'shop'}; break;
+        case 'C': cell = {type:'farm', crop:'ready', cropName:'玉米'}; break;
+        case 'U': cell = {type:'farm', crop:'young', cropName:'玉米'}; break;
+        case 'X': cell = {type:'stone'}; break;
+        case 'G': cell = {type:'goal'}; break;
+        case '~': cell = {type:'water'}; break;
+        case '@': cell = {type:'portal'}; break;
+        case 'K': cell = {type:'sheep'}; break;
+        case 'B': cell = {type:'barren'}; break;
+        default:  cell = {type:'grass'};
+      }
+      line.push(cell);
+    }
+    grid.push(line);
+  }
+  // 传送门配对：按出现顺序两两绑定
+  const portals = [];
+  for(let y=0; y<grid.length; y++) for(let x=0; x<grid[y].length; x++){
+    if(grid[y][x].type==='portal') portals.push({x,y});
+  }
+  for(let i=0;i+1<portals.length;i+=2){
+    const a = portals[i], b = portals[i+1];
+    grid[a.y][a.x].pair = { x:b.x, y:b.y };
+    grid[b.y][b.x].pair = { x:a.x, y:a.y };
+  }
+  return { grid, robot, w:rows[0].length, h:rows.length };
+}
+
+/* ---------------- 代码解析器（转译执行核心） ---------------- */
+/*
+ * 支持三语言的教学子集：
+ *   - 函数调用：move() turnLeft() plant("玉米") harvest() print(...) console.log(...)
+ *   - for 循环：Python for i in range(n):   /   JS/C++ for (let i=0; i<n; i++) {
+ *   - if 条件：Python if can_move():   /   JS/C++ if (canMove()) {   （不支持 else）
+ *   - 函数定义：Python def 名():   /   JS/C++ void 名() {
+ */
+
+function parseProgram(code, lang){
+  const lines = [];
+  const srcLines = code.split('\n');
+  srcLines.forEach((raw, i) => {
+    const info = stripLine(raw, lang);
+    if(info.code === ''){
+      lines.push({ type:'blank', src:i+1 });
+    } else {
+      lines.push({ type:'code', code:info.code, indent:info.indent, src:i+1, raw });
+    }
+  });
+
+  let program = [], errors = [];
+  try{
+    if(lang === 'python'){
+      program = parseBlockPy(lines, 0, -1).stmts;
+    } else {
+      program = parseBlockC(lines, 0).stmts;
+    }
+  }catch(e){
+    errors.push({ message:e.message || '解析失败', line:e.line||0 });
+  }
+  return { program, errors };
+}
+
+function stripLine(raw, lang){
+  let s = raw.replace(/\t/g, '    ');
+  const indent = (s.match(/^ */)[0]).length;
+  s = s.trim();
+  if(lang === 'python'){
+    // 去 # 注释（忽略字符串内的 #，简化处理）
+    s = s.replace(/#.*$/, '').replace(/;$/, '').trim();
+  } else {
+    // 去 // 和 /* */ 注释（简化：单行内）
+    s = s.replace(/\/\/.*$/, '').replace(/\/\*[\s\S]*?\*\//g, '').trim();
+    s = s.replace(/;$/, '').trim();
+  }
+  return { code:s, indent };
+}
+
+/* ---- Python 块解析 ---- */
+function parseBlockPy(lines, idx, parentIndent){
+  const stmts = [];
+  while(idx < lines.length){
+    const ln = lines[idx];
+    if(ln.type === 'blank'){ idx++; continue; }
+    if(ln.indent <= parentIndent) break;
+    const stmt = parseStmtPy(ln, lines, idx);
+    stmts.push(stmt.node);
+    idx = stmt.nextIdx;
+  }
+  return { stmts, nextIdx:idx };
+}
+
+function parseStmtPy(ln, lines, idx){
+  const code = ln.code, line = ln.src;
+  let m;
+
+  // for i in range(N):
+  if((m = code.match(/^for\s+([a-zA-Z_\u4e00-\u9fa5][\w\u4e00-\u9fa5]*)\s+in\s+range\(\s*(.+?)\s*\)\s*:\s*$/))){
+    const body = parseBlockPy(lines, idx+1, ln.indent);
+    return { node:{ type:'for', var:m[1], count:m[2].trim(), body:body.stmts, line }, nextIdx:body.nextIdx };
+  }
+  // while True:
+  if((m = code.match(/^while\s+(True|true|1)\s*:\s*$/))){
+    const body = parseBlockPy(lines, idx+1, ln.indent);
+    return { node:{ type:'while', body:body.stmts, line }, nextIdx:body.nextIdx };
+  }
+  // if cond:
+  if((m = code.match(/^if\s+(.+?)\s*:\s*$/))){
+    const cond = parseCond(m[1], 'python', line);
+    const body = parseBlockPy(lines, idx+1, ln.indent);
+    let elseBody = null, nextIdx = body.nextIdx;
+    const nl = lines[nextIdx];
+    if(nl && nl.type==='code' && nl.indent === ln.indent && /^else\s*:\s*$/.test(nl.code)){
+      const eb = parseBlockPy(lines, nextIdx+1, ln.indent);
+      elseBody = eb.stmts; nextIdx = eb.nextIdx;
+    }
+    return { node:{ type:'if', cond, body:body.stmts, elseBody, line }, nextIdx };
+  }
+  // def name():
+  if((m = code.match(/^def\s+([a-zA-Z_\u4e00-\u9fa5][\w\u4e00-\u9fa5]*)\s*\(\s*\)\s*:\s*$/))){
+    const body = parseBlockPy(lines, idx+1, ln.indent);
+    return { node:{ type:'def', name:m[1], body:body.stmts, line }, nextIdx:body.nextIdx };
+  }
+  // else 友好提示
+  // 变量赋值：x = 3
+  if((m = code.match(/^([a-zA-Z_\u4e00-\u9fa5][\w\u4e00-\u9fa5]*)\s*=\s*(.+)$/))){
+    return { node:{ type:'assign', name:m[1], expr:m[2].trim(), line }, nextIdx:idx+1 };
+  }
+  if(/^elif\s+/.test(code)){ throw { message:'这一版还不支持 elif，试试用 else 再嵌套一层 if', line }; }
+  if(code === 'else' || code.startsWith('else')){ throw { message:'这里没有配对的 if，else 必须紧跟在一个 if 块后面（同一缩进）', line }; }
+  // 函数调用 / print
+  const call = parseCall(code, 'python', line);
+  if(call) return { node:call, nextIdx:idx+1 };
+  throw { message:'这一行机器人看不懂：' + code, line };
+}
+
+/* ---- JS/C++ 块解析（大括号） ---- */
+function parseBlockC(lines, idx){
+  const stmts = [];
+  while(idx < lines.length){
+    const ln = lines[idx];
+    if(ln.type === 'blank'){ idx++; continue; }
+    const code = ln.code, line = ln.src;
+    let m;
+
+    if(code === '}' ){ idx++; break; }
+
+    // while (true) {
+    if((m = code.match(/^while\s*\(\s*(true|1)\s*\)\s*\{\s*$/))){
+      const inner = parseBlockC(lines, idx+1);
+      stmts.push({ type:'while', body:inner.stmts, line });
+      idx = inner.nextIdx;
+      continue;
+    }
+
+    // for (...) {
+    if((m = code.match(/^for\s*\((.*)\)\s*\{\s*$/))){
+      const fc = parseCFor(m[1], line);
+      const inner = parseBlockC(lines, idx+1);
+      stmts.push({ type:'for', var:fc.var, count:fc.count, body:inner.stmts, line });
+      idx = inner.nextIdx;
+      continue;
+    }
+    // if (...) {
+    if((m = code.match(/^if\s*\((.*)\)\s*\{\s*$/))){
+      const cond = parseCond(m[1], 'c', line);
+      const inner = parseBlockC(lines, idx+1);
+      let elseBody = null, nextIdx = inner.nextIdx;
+      const nxt = lines[nextIdx];
+      if(nxt && nxt.type==='code' && /^else\s*\{?\s*$/.test(nxt.code)){
+        const eb = parseBlockC(lines, nextIdx+1);
+        elseBody = eb.stmts; nextIdx = eb.nextIdx;
+      }
+      stmts.push({ type:'if', cond, body:inner.stmts, elseBody, line });
+      idx = nextIdx;
+      continue;
+    }
+    // 变量赋值：let x = 3;  /  int x = 3;  /  x = 3;
+    if((m = code.match(/^(?:(?:let|const|var|int|float|double)\s+)?([a-zA-Z_\u4e00-\u9fa5][\w\u4e00-\u9fa5]*)\s*=\s*(.+)$/))){
+      stmts.push({ type:'assign', name:m[1], expr:m[2].trim(), line });
+      idx++; continue;
+    }
+    if(/^\}\s*else/.test(code)){ throw { message:'把 "} else {" 分开写两行：先写 }，下一行写 else {', line }; }
+    // void name() {  /  function name() {
+    if((m = code.match(/^(?:void|function)\s+([a-zA-Z_\u4e00-\u9fa5][\w\u4e00-\u9fa5]*)\s*\(\s*\)\s*\{\s*$/))){
+      const inner = parseBlockC(lines, idx+1);
+      stmts.push({ type:'def', name:m[1], body:inner.stmts, line });
+      idx = inner.nextIdx;
+      continue;
+    }
+    if(code === 'else {' || code === '} else {'){
+      throw { message:'这一版还不支持 else，先用多个 if 试试', line };
+    }
+    const call = parseCall(code, 'c', line);
+    if(call){ stmts.push(call); idx++; continue; }
+    throw { message:'这一行机器人看不懂：' + code, line };
+  }
+  return { stmts, nextIdx:idx };
+}
+
+function parseCFor(inner, line){
+  const m = inner.match(/^(?:let|const|var|int)\s+([a-zA-Z_\u4e00-\u9fa5][\w\u4e00-\u9fa5]*)\s*=\s*\d+\s*;\s*\1\s*<\s*([a-zA-Z_\u4e00-\u9fa5][\w\u4e00-\u9fa5]*|\d+)/)
+         || inner.match(/^([a-zA-Z_\u4e00-\u9fa5][\w\u4e00-\u9fa5]*)\s*=\s*\d+\s*;\s*\1\s*<\s*([a-zA-Z_\u4e00-\u9fa5][\w\u4e00-\u9fa5]*|\d+)/);
+  if(!m) throw { message:'for 循环的格式写错了，应该是 for (let i=0; i<次数; i++)', line };
+  return { var:m[1], count:m[2] };
+}
+
+function parseCond(expr, lang, line){
+  const e = expr.trim();
+  let neg = false;
+  let body = e;
+  if(e.startsWith('not ') || e.startsWith('!')){ neg = true; body = e.replace(/^(not |!)/,'').trim(); }
+  const names = lang === 'python' ? { move:'can_move', ready:'is_ready', plant:'can_plant' } : { move:'canMove', ready:'isReady', plant:'canPlant' };
+  if(body === names.move+'()' || body === names.move) return { name:'can_move', neg };
+  if(body === names.ready+'()' || body === names.ready) return { name:'is_ready', neg };
+  if(body === names.plant+'()' || body === names.plant) return { name:'can_plant', neg };
+  // 比较表达式：i == 2 / x < 5 / score >= 10 等（存为裸条件，运行时求值）
+  if(/^(?:[a-zA-Z_\u4e00-\u9fa5][\w\u4e00-\u9fa5]*|\d+)\s*(?:==|!=|>=|<=|>|<)\s*(?:[a-zA-Z_\u4e00-\u9fa5][\w\u4e00-\u9fa5]*|\d+)$/.test(body)){
+    return { name:'_cmp', expr:body, neg };
+  }
+  // 裸变量/数字（真值判断）
+  if(/^[a-zA-Z_\u4e00-\u9fa5][\w\u4e00-\u9fa5]*$/.test(body) || /^-?\d+$/.test(body)){
+    return { name:'_val', expr:body, neg };
+  }
+  throw { message:'条件看不懂：' + expr + '（试试 ' + (lang==='python'?'can_move() 或 i == 2':'canMove() 或 i == 2') + '）', line };
+}
+
+/* ---- 表达式求值（变量 + 四则运算 + 括号） ---- */
+function evalExpr(str, rt){
+  const s = str.trim().replace(/\s+/g, '');
+  if(/^[-+]?\d+$/.test(s)) return parseInt(s);
+  if((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) return s.slice(1,-1);
+  if(/^[a-zA-Z_\u4e00-\u9fa5][\w\u4e00-\u9fa5]*$/.test(s)){
+    if(s in rt.vars) return rt.vars[s];
+    throw new Error('变量 "' + s + '" 还没定义（先赋值再用）');
+  }
+  let pos = 0;
+  function peek(){ return pos < s.length ? s[pos] : ''; }
+  function parseExpr(){
+    let v = parseTerm();
+    while(true){
+      const c = peek();
+      if(c === '+'){ pos++; v += parseTerm(); }
+      else if(c === '-'){ pos++; v -= parseTerm(); }
+      else break;
+    }
+    return v;
+  }
+  function parseTerm(){
+    let v = parseFactor();
+    while(true){
+      const c = peek();
+      if(c === '*'){ pos++; v *= parseFactor(); }
+      else if(c === '/'){ pos++; const d = parseFactor(); if(d === 0) throw new Error('不能除以 0'); v = Math.floor(v/d); }
+      else if(c === '%'){ pos++; const d = parseFactor(); if(d === 0) throw new Error('不能除以 0'); v = v % d; }
+      else break;
+    }
+    return v;
+  }
+  function parseFactor(){
+    const c = peek();
+    if(c === '-'){ pos++; return -parseFactor(); }
+    if(c === '('){ pos++; const v = parseExpr(); if(peek() !== ')') throw new Error('括号没配对'); pos++; return v; }
+    let m = /^(\d+)/.exec(s.slice(pos));
+    if(m){ pos += m[0].length; return parseInt(m[0]); }
+    m = /^([a-zA-Z_\u4e00-\u9fa5][\w\u4e00-\u9fa5]*)/.exec(s.slice(pos));
+    if(m){ pos += m[0].length;
+      if(m[1] in rt.vars) return rt.vars[m[1]];
+      throw new Error('变量 "' + m[1] + '" 还没定义（先赋值再用）');
+    }
+    throw new Error('表达式看不懂：' + s);
+  }
+  const v = parseExpr();
+  if(pos < s.length) throw new Error('表达式看不懂：' + s);
+  return v;
+}
+
+/* ---- 按顶层(括号外)分割逻辑运算符 ---- */
+function splitTop(expr, op){
+  const s = expr.replace(/\|\|/g, ' or ').replace(/&&/g, ' and ').trim();
+  const parts = []; let depth = 0, cur = '', i = 0;
+  while(i < s.length){
+    const c = s[i];
+    if(c === '('){ depth++; cur += c; i++; }
+    else if(c === ')'){ depth--; cur += c; i++; }
+    else if(depth === 0 && s.startsWith(op, i) &&
+            (i === 0 || /\s/.test(s[i-1])) &&
+            (i + op.length >= s.length || /\s/.test(s[i+op.length]))){
+      parts.push(cur.trim()); cur = ''; i += op.length;
+    }
+    else { cur += c; i++; }
+  }
+  parts.push(cur.trim());
+  return parts;
+}
+
+function evalCond(cond, rt){
+  const e = cond.trim();
+  const orParts = splitTop(e, 'or');
+  if(orParts.length > 1) return orParts.some(p => evalCond(p, rt));
+  const andParts = splitTop(e, 'and');
+  if(andParts.length > 1) return andParts.every(p => evalCond(p, rt));
+  let neg = false, body = e;
+  if(body.startsWith('not ')){ neg = true; body = body.slice(4).trim(); }
+  else if(body.startsWith('!')){ neg = true; body = body.slice(1).trim(); }
+  let r;
+  if(body === 'can_move()' || body === 'canMove()') r = canMove(rt);
+  else if(body === 'is_ready()' || body === 'isReady()') r = isReady(rt);
+  else if(body === 'can_plant()' || body === 'canPlant()') r = canPlant(rt);
+  else {
+    const cm = body.match(/^(.+?)\s*(==|!=|>=|<=|>|<)\s*(.+)$/);
+    if(cm){
+      const a = evalExpr(cm[1].trim(), rt);
+      const b = evalExpr(cm[3].trim(), rt);
+      switch(cm[2]){
+        case '==': r = a === b; break;
+        case '!=': r = a !== b; break;
+        case '>=': r = a >= b; break;
+        case '<=': r = a <= b; break;
+        case '>': r = a > b; break;
+        case '<': r = a < b; break;
+      }
+    } else {
+      try{ r = !!evalExpr(body, rt); }catch(err){ throw { message:'条件看不懂：' + body + '（试试 can_move() 或 i < 3）' }; }
+    }
+  }
+  return neg ? !r : r;
+}
+
+/* ---- 函数调用解析 ---- */
+function parseArgsStr(argStr){
+  const args = [];
+  if(argStr !== ''){
+    let cur='', inStr=null;
+    for(const ch of argStr){
+      if(inStr){ cur+=ch; if(ch===inStr) inStr=null; }
+      else if(ch==='"' || ch==="'"){ inStr=ch; cur+=ch; }
+      else if(ch===','){ args.push(cur.trim()); cur=''; }
+      else cur+=ch;
+    }
+    if(cur.trim()!=='') args.push(cur.trim());
+  }
+  return args.map(a => {
+    if(/^".*"$/.test(a) || /^'.*'$/.test(a)) return { type:'str', value:a.slice(1,-1) };
+    if(/^-?\d+$/.test(a)) return { type:'num', value:parseInt(a) };
+    return { type:'raw', value:a };
+  });
+}
+
+function parseCall(code, lang, line){
+  let m;
+  // console.log(...) 特判（JavaScript）
+  if((m = code.match(/^console\s*\.\s*log\s*\((.*)\)\s*$/))){
+    return { type:'print', args:parseArgsStr(m[1]), line, source:'console.log' };
+  }
+  m = code.match(/^([a-zA-Z_\u4e00-\u9fa5][\w\u4e00-\u9fa5]*)\s*\((.*)\)\s*$/);
+  if(!m) return null;
+  const name = m[1];
+  const args = parseArgsStr(m[2]);
+  if((lang==='python' && name==='print') || (lang==='c' && name==='print')){
+    return { type:'print', args, line };
+  }
+  return { type:'call', name, args, line };
+}
+
+/* ---------------- 执行引擎 ---------------- */
+const API_ALIAS = {
+  move:['move'],
+  turn_left:['turn_left','turnLeft'],
+  turn_right:['turn_right','turnRight'],
+  plant:['plant'],
+  harvest:['harvest'],
+  sell:['sell'],
+  can_move:['can_move','canMove'],
+  can_plant:['can_plant','canPlant'],
+  is_ready:['is_ready','isReady'],
+  water:['water']
+};
+
+function newRuntime(mapRows, mode){
+  const m = parseMap(mapRows || LEVELS[state.levelIdx].map);
+  const free = mode === 'free';
+  return {
+    grid:m.grid, robot:m.robot, w:m.w, h:m.h,
+    mode: free ? 'free' : 'level', free,
+    planted:0, harvested:0, steps:0, usedLines:new Set(),
+    plantCount:{}, funcs:{}, running:true, finishReason:null, output:[],
+    particleBurst:null, maxSteps: free ? FREE_MAX_STEPS : 0, vars:{}
+  };
+}
+
+function evalArg(arg, rt){
+  if(arg.type==='str') return arg.value;
+  if(arg.type==='num') return arg.value;
+  return evalExpr(arg.value, rt);
+}
+
+function isWall(rt, x, y){
+  if(x<0 || y<0 || x>=rt.w || y>=rt.h) return true;
+  const t = rt.grid[y][x].type;
+  return t==='stone' || t==='water' || t==='sheep';
+}
+
+async function execStmt(stmt, rt, stateRef){
+  if(!rt.running || runAbort) return;
+  markLine(stmt.line, 'cur');
+  await sleep(speed * 0.45); // 高亮停顿
+
+  switch(stmt.type){
+    case 'call': {
+      const api = resolveApi(stmt.name);
+      if(api === null){
+        if(rt.funcs[stmt.name]){
+          await execBlock(rt.funcs[stmt.name], rt, stateRef);
+          return;
+        }
+        await runError('机器人不认识指令 "' + stmt.name + '()"。\n看看指令手册里有哪些可用指令。', stmt.line, rt);
+        return;
+      }
+      const r = await execApi(api, stmt, rt);
+      if(r === false){ await runError(rt.lastError, stmt.line, rt); }
+      break;
+    }
+    case 'for': {
+      let limit;
+      try{ limit = evalExpr(String(stmt.count), rt); }
+      catch(e){ await runError(e.message || '循环次数算不出来', stmt.line, rt); return; }
+      if(limit > 50) { await runError('循环次数太多啦（' + limit + ' 次），看看是不是写错了？', stmt.line, rt); return; }
+      for(let i=0; i<limit; i++){
+        if(!rt.running || runAbort) break;
+        rt.vars[stmt.var] = i;
+        await execBlock(stmt.body, rt, stateRef);
+      }
+      break;
+    }
+    case 'while': {
+      let guard = 0;
+      while(rt.running && !runAbort){
+        await execBlock(stmt.body, rt, stateRef);
+        if(!rt.free && ++guard > 500){
+          await runError('循环次数太多啦，看看是不是写错了？', stmt.line, rt);
+          return;
+        }
+        if(rt.free && rt.steps >= rt.maxSteps) break; // 由 tick 处理
+      }
+      break;
+    }
+    case 'if': {
+      const cond = evalCond(stmt.cond, rt);
+      if(cond) await execBlock(stmt.body, rt, stateRef);
+      else if(stmt.elseBody) await execBlock(stmt.elseBody, rt, stateRef);
+      break;
+    }
+    case 'def':
+      rt.funcs[stmt.name] = stmt.body;
+      break;
+    case 'assign': {
+      try{
+        rt.vars[stmt.name] = evalExpr(stmt.expr, rt);
+      }catch(e){
+        await runError(e.message || '赋值写错了', stmt.line, rt); return;
+      }
+      break;
+    }
+    case 'print': {
+      let parts;
+      try{
+        parts = stmt.args.map(a => {
+          const v = evalArg(a, rt);
+          return String(v === null ? a.value : v);
+        });
+      }catch(e){
+        await runError(e.message || 'print 参数出错', stmt.line, rt); return;
+      }
+      log('print', parts.join(' '));
+      rt.output.push(parts.join(' '));
+      break;
+    }
+  }
+}
+
+async function execBlock(stmts, rt, stateRef){
+  for(const s of stmts){
+    if(!rt.running || runAbort) break;
+    if(debugMode && s.type !== 'blank'){
+      await debugWait(s);
+      if(runAbort) break;
+    }
+    await execStmt(s, rt, stateRef);
+  }
+}
+function debugWait(stmt){
+  return new Promise(res => {
+    debugResolve = res;
+    clearCur();
+    markLine(stmt.line, 'cur');
+    log('info', '🐞 下一步：第 ' + stmt.line + ' 行');
+  });
+}
+function clearCur(){
+  const nums = $('lineNums').children;
+  const hl = $('hlLayer').children;
+  for(let i=0;i<nums.length;i++){ nums[i].classList.remove('cur'); hl[i].classList.remove('cur-line'); }
+}
+function finishDebug(){
+  debugMode = false;
+  clearCur();
+  $('btnDebug').classList.remove('active');
+  $('btnDebug').textContent = '🐞 单步调试';
+  $('debugBar').classList.add('hidden');
+}
+
+function resolveApi(name){
+  for(const key in API_ALIAS){
+    if(API_ALIAS[key].includes(name)) return key;
+  }
+  return null;
+}
+
+async function execApi(api, stmt, rt){
+  const rob = rt.robot;
+  rt.lastError = null;
+  switch(api){
+    case 'move': {
+      const nx = rob.x + DIRS[rob.dir].x, ny = rob.y + DIRS[rob.dir].y;
+      if(isWall(rt, nx, ny)){
+        const wallType = rt.grid[ny] && rt.grid[ny][nx] ? rt.grid[ny][nx].type : null;
+        const wallMsg = nx<0||ny<0||nx>=rt.w||ny>=rt.h ? '已经到地图边缘了' : wallType==='water' ? '前面是河流，过不去！' : wallType==='sheep' ? '羊挡路啦，绕开它' : '是一块石头';
+        rt.lastError = '前方走不了啦（' + wallMsg + '）。';
+        rt.finishReason='error';
+        return false;
+      }
+      const destCell = rt.grid[ny][nx];
+      if(destCell.type === 'portal'){
+        const p = destCell.pair || {x:nx,y:ny};
+        rob.x = p.x; rob.y = p.y; rt.steps++;
+        tick(rt);
+        rt.highlightCell = {x:p.x, y:p.y};
+        burst(destCell, '✨', 'portal');
+        beep('portal');
+        await renderMap();
+        return true;
+      }
+      rob.x = nx; rob.y = ny; rt.steps++;
+      tick(rt);
+      rt.highlightCell = {x:nx, y:ny};
+      beep('move');
+      await animateMove();
+      return true;
+    }
+    case 'turn_left':  rob.dir = (rob.dir + 3) % 4; rt.steps++; tick(rt); rt.highlightCell = {x:rob.x, y:rob.y}; beep('turn'); await renderMap(); return true;
+    case 'turn_right': rob.dir = (rob.dir + 1) % 4; rt.steps++; tick(rt); rt.highlightCell = {x:rob.x, y:rob.y}; beep('turn'); await renderMap(); return true;
+    case 'plant': {
+      const cell = rt.grid[rob.y][rob.x];
+      const crop = stmt.args.length ? evalArg(stmt.args[0], rt) : null;
+      if(!crop){ rt.lastError = 'plant() 要告诉机器人种什么，比如 plant("玉米")'; return false; }
+      if(rt.free && !freeState.unlocked[crop]){ rt.lastError = '还没解锁「' + crop + '」，先在右侧面板用金币解锁。'; return false; }
+      if(cell.type !== 'farm'){ rt.lastError = '这里不是农田，种不了。'; return false; }
+      if(cell.crop){ if(rt.free){ log('warn', '⚠ 这块田已经种过啦，跳过'); return true; } rt.lastError = '这块田已经种过啦。'; return false; }
+      cell.crop = 'planted'; cell.cropName = crop; cell.grow = 0; cell.watered = false;
+      rt.planted++; rt.steps++;
+      if(rt.free) freeState.plantedTotal = (freeState.plantedTotal||0) + 1;
+      rt.plantCount[crop] = (rt.plantCount[crop]||0) + 1;
+      tick(rt);
+      rt.highlightCell = {x:rob.x, y:rob.y};
+      burst(cell, crop, 'plant');
+      beep('plant');
+      await renderMap();
+      return true;
+    }
+    case 'water': {
+      const cell = rt.grid[rob.y][rob.x];
+      if(cell.type !== 'farm' || !cell.crop || cell.crop==='ready'){
+        rt.lastError = '这里没有正在生长的作物，浇不了水。'; return false;
+      }
+      if(cell.watered){ rt.lastError = '这株作物已经浇过水啦。'; return false; }
+      cell.watered = true;
+      cell.grow = (cell.grow||0) + 2;
+      const need = (CROPS[cell.cropName] && CROPS[cell.cropName].grow) || 3;
+      if(cell.grow >= need) cell.crop = 'ready';
+      rt.steps++;
+      tick(rt);
+      rt.highlightCell = {x:rob.x, y:rob.y};
+      burst(cell, cell.cropName, 'water');
+      beep('water');
+      await renderMap();
+      return true;
+    }
+    case 'harvest': {
+      const cell = rt.grid[rob.y][rob.x];
+      if(cell.type !== 'farm' || cell.crop !== 'ready'){ rt.lastError = '这里没有可以收获的成熟作物。'; return false; }
+      const cname = cell.cropName || '玉米';
+      cell.crop = null; cell.cropName = null;
+      rt.harvested++; rt.steps++;
+      if(rt.free){
+        freeState.inventory[cname] = (freeState.inventory[cname]||0) + 1;
+        updateFreeHUD();
+      }
+      tick(rt);
+      rt.highlightCell = {x:rob.x, y:rob.y};
+      burst(cell, cname, 'harvest');
+      beep('harvest');
+      await renderMap();
+      return true;
+    }
+    case 'sell': {
+      const cell = rt.grid[rob.y][rob.x];
+      if(cell.type !== 'shop'){ rt.lastError = '这里不是商店，卖不了货（找地图上的金色💰格）。'; return false; }
+      let total = 0, cnt = 0, orderGot = 0;
+      for(const crop in freeState.inventory){
+        const n = freeState.inventory[crop];
+        if(n > 0){
+          total += n * (CROP_PRICES[crop]||5); cnt += n;
+          if(freeState.order && freeState.order.crop === crop) orderGot += n;
+          freeState.inventory[crop] = 0;
+        }
+      }
+      if(cnt === 0){
+        log('info', '🛒 商店：库存空空，没有东西可卖');
+      } else {
+        freeState.money += total;
+        freeState.totalEarned = (freeState.totalEarned||0) + total;
+        log('ok', '🛒 卖出 ' + cnt + ' 件作物，获得 🪙' + total + '！');
+        updateFreeHUD();
+      }
+      if(freeState.order && orderGot > 0){
+        freeState.order.got += orderGot;
+        if(freeState.order.got >= freeState.order.need){
+          freeState.money += freeState.order.reward;
+          freeState.totalEarned = (freeState.totalEarned||0) + freeState.order.reward;
+          freeState.ordersDone = (freeState.ordersDone||0) + 1;
+          log('win', '📋 订单完成！交货 ' + freeState.order.crop + ' ×' + freeState.order.need + '，奖励 🪙' + freeState.order.reward + '！');
+          beep('coin');
+          newOrder();
+        } else {
+          log('info', '📋 订单进度：' + freeState.order.crop + ' ' + freeState.order.got + '/' + freeState.order.need);
+        }
+        updateFreeHUD();
+      }
+      rt.steps++;
+      tick(rt);
+      rt.highlightCell = {x:rob.x, y:rob.y};
+      if(cnt > 0) burst(cell, ''+total, 'coin');
+      if(cnt > 0) beep('coin');
+      await renderMap();
+      return true;
+    }
+    case 'can_move': {
+      const nx = rob.x + DIRS[rob.dir].x, ny = rob.y + DIRS[rob.dir].y;
+      return !isWall(rt, nx, ny);
+    }
+    case 'can_plant': {
+      const cell = rt.grid[rob.y][rob.x];
+      return cell.type==='farm' && !cell.crop;
+    }
+    case 'is_ready': {
+      const cell = rt.grid[rob.y][rob.x];
+      return cell.type==='farm' && cell.crop==='ready';
+    }
+  }
+  return true;
+}
+
+function evalCond(cond, rt){
+  let v = false;
+  if(cond.name==='can_move'){
+    const nx = rt.robot.x + DIRS[rt.robot.dir].x, ny = rt.robot.y + DIRS[rt.robot.dir].y;
+    v = !isWall(rt, nx, ny);
+  }
+  if(cond.name==='is_ready'){
+    const cell = rt.grid[rt.robot.y][rt.robot.x];
+    v = cell.type==='farm' && cell.crop==='ready';
+  }
+  if(cond.name==='can_plant'){
+    const cell = rt.grid[rt.robot.y][rt.robot.x];
+    v = cell.type==='farm' && !cell.crop;
+  }
+  return cond.neg ? !v : v;
+}
+
+/* 自由模式：每走一步，已种作物生长一点 */
+function tick(rt){
+  if(rt.free){
+    const w = freeState.weather;
+    for(const row of rt.grid) for(const cell of row){
+      if(cell.type==='farm' && cell.crop==='planted'){
+        let inc = 1;
+        if(w === 'rain') inc = 2;
+        if(w === 'drought' && !cell.watered) inc = 0;
+        cell.grow = (cell.grow||0) + inc;
+        const need = (CROPS[cell.cropName] && CROPS[cell.cropName].grow) || 3;
+        if(cell.grow >= need) cell.crop = 'ready';
+      }
+    }
+    if(freeState.unlocked['洒水器'] && rt.steps > 0 && rt.steps % 10 === 0){
+      for(const row of rt.grid) for(const cell of row){
+        if(cell.type==='farm' && cell.crop==='planted') cell.grow = (cell.grow||0) + 1;
+      }
+    }
+    freeState.totalSteps = (freeState.totalSteps||0) + 1;
+    if(freeState.totalSteps % 40 === 0){
+      const seq = ['sun','cloud','rain','drought'];
+      freeState.weather = seq[(seq.indexOf(freeState.weather)+1)%4];
+      log('info', WEATHER_INFO[freeState.weather].emoji + ' 天气变化：' + WEATHER_INFO[freeState.weather].name + ' — ' + WEATHER_INFO[freeState.weather].desc);
+      updateFreeHUD();
+    }
+  }
+  if(rt.maxSteps && rt.steps >= rt.maxSteps){
+    rt.running = false;
+    rt.finishReason = 'timeout';
+  }
+}
+
+/* ---------------- 运行控制 ---------------- */
+async function runCode(){
+  if(state.running) return;
+  state.runCount = (state.runCount||0) + 1;
+  const code = $('codeInput').value;
+  const { program, errors } = parseProgram(code, state.lang);
+  clearErrors();
+  if(errors.length){
+    if(debugMode) finishDebug();
+    state.errorCount = (state.errorCount||0) + 1;
+    pushHistory(false, '😵 语法错误：' + errors[0].message);
+    log('err', '😵 代码有问题，无法运行：');
+    errors.forEach(e => { log('err', '  第 ' + e.line + ' 行：' + e.message); markErrorLine(e.line); });
+    beep('error');
+    return;
+  }
+  const blankCount = program.filter(s=>s.type==='blank').length;
+  const stmtLines = new Set();
+  collectLines(program, stmtLines);
+  const lineCount = stmtLines.size;
+
+  // 初始化运行时
+  rt = newRuntime(state.mode === 'free' ? FREE_MAP : null, state.mode || 'level');
+  rt.usedLines = stmtLines;
+  runtime = rt;
+  robotPos = { x:rt.robot.x, y:rt.robot.y };
+  runAbort = false;
+  state.running = true;
+  robotSad = false; robotHappy = 0; robotTilt = 0;
+  setRunningUI(true);
+  log('run', '▶ 机器人开始执行代码…');
+  renderMap();
+
+  // 预收集函数
+  collectDefs(program, rt.funcs);
+
+  // 执行前：把成熟检查放这里（planted 自动成熟在结算前）
+  try{
+    await execBlock(program, rt, state);
+  }catch(e){
+    console.error(e);
+    log('err', '😵 运行时出了点问题：' + (e.message||'未知错误'));
+  }
+
+  if(runAbort){ if(rt && rt.free) saveGame(); log('info','⏹ 已停止'); setRunningUI(false); return; }
+  if(rt.finishReason === 'error'){
+    state.errorCount = (state.errorCount||0) + 1;
+    pushHistory(false, '❌ ' + (rt.lastError || '运行错误'));
+    await runErrorFinal(rt.lastError || '机器人卡住了');
+    if(debugMode) finishDebug();
+    return;
+  }
+  if(rt.free){
+    setRunningUI(false);
+    if(rt.finishReason === 'timeout'){
+      log('warn', '⏱ 本次运行达到 ' + FREE_MAX_STEPS + ' 步上限，自动停止。可以优化脚本，或点「重置」继续');
+      pushHistory(false, '⏱ 达到 ' + FREE_MAX_STEPS + ' 步上限');
+    } else {
+      log('info', '✅ 脚本执行完毕！库存与金币已更新');
+      pushHistory(true, '✅ 自由模式运行完成');
+    }
+    checkBadges();
+    updateFreeHUD();
+    saveGame();
+    if(debugMode) finishDebug();
+    return;
+  }
+  if(!rt.running){ if(debugMode) finishDebug(); return; }
+
+  // 生长：种下的作物成熟（结算前动画）
+  for(const row of rt.grid) for(const cell of row){
+    if(cell.type==='farm' && cell.crop==='planted') cell.crop='ready';
+  }
+  await renderMap();
+
+  // 检查目标
+  const goal = LEVELS[state.levelIdx].goal;
+  const check = checkGoal(goal, rt);
+  if(check.done){
+    const stars = calcStars(check, lineCount);
+    const coin = [0,5,15,30][stars];
+    checkBadges();
+    const prevBest = state.best[LEVELS[state.levelIdx].id];
+    const newBest = !prevBest || check.steps < prevBest.steps;
+    state.coins += coin;
+    if(newBest) state.best[LEVELS[state.levelIdx].id] = { steps:check.steps, lines:lineCount };
+    if(stars > (state.stars[LEVELS[state.levelIdx].id]||0)) state.stars[LEVELS[state.levelIdx].id] = stars;
+    const totalStars = Object.values(state.stars).reduce((a,b)=>a+b,0);
+    $('hudStars').textContent = totalStars;
+    $('hudCoins').textContent = state.coins;
+    saveGame();
+    log('ok', '✅ 委托完成！用时 ' + check.steps + ' 步，代码 ' + lineCount + ' 行。获得 ' + coin + ' 金币！');
+    pushHistory(true, '✅ ' + check.steps + ' 步 / ' + lineCount + ' 行');
+    beep('win');
+    markGoalDone();
+    await sleep(600);
+    robotHappy = 5;
+    showResult(stars, check.steps, lineCount, LEVELS[state.levelIdx].optimalSteps, coin, newBest);
+  } else {
+    log('warn', '⚠ 机器人执行完了，但委托目标还没完成：' + check.reason);
+    pushHistory(false, '⚠ 目标未完成：' + check.reason);
+    beep('fail');
+    rt.finishReason='goalFail';
+    markGoal();
+  }
+  if(debugMode) finishDebug();
+  setRunningUI(false);
+}
+
+function collectLines(stmts, set){
+  for(const s of stmts){
+    if(s.type==='blank') continue;
+    set.add(s.line);
+    if(s.body) collectLines(s.body, set);
+    if(s.elseBody) collectLines(s.elseBody, set);
+  }
+}
+function collectDefs(stmts, funcs){
+  for(const s of stmts){
+    if(s.type==='def') funcs[s.name] = s.body;
+    if(s.body) collectDefs(s.body, funcs);
+  }
+}
+
+function checkGoal(goal, rt){
+  const res = { done:false, reason:'', steps:rt.steps, planted:rt.planted, harvested:rt.harvested };
+  if(goal.type==='plant'){
+    const n = rt.plantCount[goal.crop]||0;
+    if(n >= goal.need){ res.done = true; }
+    else res.reason = '还差 ' + (goal.need-n) + ' 棵「' + goal.crop + '」没种（已种 ' + n + ' 棵）';
+  }
+  else if(goal.type==='harvest'){
+    if(rt.harvested >= goal.need) res.done = true;
+    else res.reason = '还差 ' + (goal.need-rt.harvested) + ' 棵作物没收获';
+  }
+  else if(goal.type==='both'){
+    const n = rt.plantCount[goal.crop]||0;
+    if(goal.plantNeed>0 && n < goal.plantNeed){ res.reason = '还差 ' + (goal.plantNeed-n) + ' 棵「' + goal.crop + '」没种'; return res; }
+    if(goal.harvestNeed>0 && rt.harvested < goal.harvestNeed){ res.reason = '还差 ' + (goal.harvestNeed-rt.harvested) + ' 棵作物没收获'; return res; }
+    if(goal.reach){
+      const rob = rt.robot;
+      if(rt.grid[rob.y][rob.x].type==='goal'){ res.done = true; }
+      else res.reason = '机器人还没走到仓库（金色格子）';
+      return res;
+    }
+  }
+  return res;
+}
+
+function calcStars(check, lines){
+  const lv = LEVELS[state.levelIdx];
+  if(check.steps <= lv.optimalSteps) return 3;
+  if(check.steps <= lv.optimalSteps + 4) return 2;
+  return 1;
+}
+
+function markGoalDone(){
+  const goal = LEVELS[state.levelIdx].goal;
+  const chips = [];
+  if(goal.type==='plant' || (goal.type==='both'&&goal.plantNeed>0)){
+    const need = goal.type==='plant'?goal.need:goal.plantNeed;
+    chips.push({ text:'🌱 种 ' + goal.crop + ' ' + need + '/' + need, ok:true });
+  }
+  if(goal.type==='harvest' || (goal.type==='both'&&goal.harvestNeed>0)){
+    const need = goal.type==='harvest'?goal.need:goal.harvestNeed;
+    chips.push({ text:'🌾 收获 ' + need + '/' + need, ok:true });
+  }
+  if(goal.reach) chips.push({ text:'🚩 到达仓库', ok:true });
+  renderGoalChips(chips);
+}
+
+function markGoal(){
+  const goal = LEVELS[state.levelIdx].goal;
+  const chips = [];
+  if(goal.type==='plant' || (goal.type==='both'&&goal.plantNeed>0)){
+    const n = (rt.plantCount[goal.crop]||0);
+    chips.push({ text:'🌱 种 ' + goal.crop + ' ' + n + '/' + goal.need, ok:n>=goal.need });
+  }
+  if(goal.type==='harvest' || (goal.type==='both'&&goal.harvestNeed>0)){
+    const need = goal.type==='harvest'?goal.need:goal.harvestNeed;
+    chips.push({ text:'🌾 收获 ' + rt.harvested + '/' + need, ok:rt.harvested>=need });
+  }
+  if(goal.reach){
+    const rob = rt.robot;
+    const on = rt.grid[rob.y][rob.x].type==='goal';
+    chips.push({ text:'🚩 到达仓库', ok:on });
+  }
+  renderGoalChips(chips);
+}
+
+function markLine(line, cls){
+  if(!line) return;
+  const nums = $('lineNums').children;
+  const hlLines = $('hlLayer').children;
+  if(line-1 < nums.length){
+    if(cls==='cur'){
+      nums[line-1].classList.add('cur');
+      hlLines[line-1].classList.add('cur-line');
+    } else if(cls==='err'){
+      nums[line-1].classList.add('err');
+      hlLines[line-1].classList.add('err-line');
+    }
+  }
+}
+function clearErrors(){
+  const nums = $('lineNums').children;
+  const hlLines = $('hlLayer').children;
+  for(let i=0;i<nums.length;i++){
+    nums[i].classList.remove('err');
+    hlLines[i].classList.remove('err-line');
+  }
+}
+function markErrorLine(line){
+  if(line-1 < $('lineNums').children.length){
+    $('lineNums').children[line-1].classList.add('err');
+    $('hlLayer').children[line-1].classList.add('err-line');
+  }
+}
+
+async function runError(msg, line, rt){
+  robotSad = true; robotHappy = 0;
+  rt.running = false;
+  rt.finishReason = 'error';
+  rt.lastError = msg;
+  markLine(line, 'err');
+  log('err', '❌ ' + msg);
+  beep('error');
+}
+async function runErrorFinal(msg){
+  log('err', '❌ ' + msg);
+  beep('error');
+  setRunningUI(false);
+}
+
+/* ---------------- 动画与渲染 ---------------- */
+const canvas = $('mapCanvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+let robotBob = 0;
+let robotPos = {x:0, y:0};   // 渲染用机器人位置（可插值）
+let robotTilt = 0, robotSad = false, robotHappy = 0;   // 动画状态
+let floats = [];   // 飘字（金币+N）
+const CANVAS_W = 520, CANVAS_H = 520;
+let TILE = 96;
+let LOGIC_H = 520;
+
+function tileSize(){
+  TILE = Math.min(96, Math.floor((CANVAS_W - 20) / Math.max(rt.w, rt.h)));
+  return TILE;
+}
+
+function cellRect(x,y){
+  const ox = (CANVAS_W - rt.w*TILE)/2, oy = (LOGIC_H - rt.h*TILE)/2;
+  return { x:ox + x*TILE, y:oy + y*TILE };
+}
+
+function fitCanvas(){
+  const panel = canvas.parentElement;
+  const pw = Math.max(300, panel.clientWidth - 24), ph = Math.max(300, panel.clientHeight - 24);
+  const tile = Math.min(pw / rt.w, ph / rt.h);
+  const w = Math.max(260, Math.round(tile * rt.w));
+  const h = Math.max(Math.round(w * 0.6), Math.round(tile * rt.h));   // 地图不扁：高度不小于宽的 60%
+  canvas.style.width = w + "px";
+  canvas.style.height = h + "px";
+}
+function renderMap(){
+  fitCanvas();
+  LOGIC_H = Math.max(300, Math.round(CANVAS_W * Math.max(rt.h / rt.w, 0.6)));
+  const dpr = window.devicePixelRatio || 1;
+  const rw = canvas.getBoundingClientRect().width;
+  const zf = rw > 0 && canvas.clientWidth > 0 ? rw / canvas.clientWidth : 1;
+  const cw = Math.max(200, Math.round(canvas.clientWidth * zf * dpr));
+  const ch = Math.max(200, Math.round(canvas.clientHeight * zf * dpr));
+  if(canvas.width !== cw){ canvas.width = cw; canvas.height = ch; }
+  const sc = cw / CANVAS_W;
+  ctx.setTransform(sc,0,0,sc,0,0); tileSize();
+  const ox = (CANVAS_W - rt.w*TILE)/2, oy = (LOGIC_H - rt.h*TILE)/2;
+  const bg = ctx.createLinearGradient(0,0,0,LOGIC_H);
+  bg.addColorStop(0,'#101a14'); bg.addColorStop(1,'#0c1410');
+  ctx.fillStyle = bg; ctx.fillRect(0,0,CANVAS_W,LOGIC_H);
+
+  // 地块（手机小格紧凑模式：略去装饰细节，仅窄屏生效）
+  const M = TILE < 44 && (window.innerWidth || document.documentElement.clientWidth) < 1000;
+  const T = Date.now()/1000;
+  for(let y=0;y<rt.h;y++) for(let x=0;x<rt.w;x++){
+    const cell = rt.grid[y][x];
+    const r = cellRect(x,y);
+    const cx = r.x+TILE/2, cy = r.y+TILE/2;
+    if(cell.type==='grass'){
+      const g = ctx.createLinearGradient(r.x,r.y,r.x,r.y+TILE);
+      g.addColorStop(0,'#20331e'); g.addColorStop(1,'#172719');
+      ctx.fillStyle = g;
+      ctx.fillRect(r.x+2, r.y+2, TILE-4, TILE-4);
+      const seed = x*7 + y*13;
+      ctx.fillStyle = 'rgba(255,255,255,.03)';
+      ctx.beginPath(); ctx.arc(r.x+6, r.y+6, TILE*0.28, 0, Math.PI*2); ctx.fill();
+      if(M){ ctx.strokeStyle = 'rgba(74,222,128,.12)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(r.x+TILE*0.5, r.y+TILE*0.5, TILE*0.16, 0, Math.PI*2); ctx.stroke(); }
+      // 小花点缀（稀疏小朵）与灌木（手机紧凑模式略去）
+      const seed2 = (x*31 + y*17 + seed) % 10;
+      if(seed2 === 3 && !M){
+        const fx = r.x + 10 + (seed % (TILE-20)), fy = r.y + 10 + ((seed*3) % (TILE-20));
+        const petals = ['rgba(248,240,190,.85)','rgba(240,180,220,.85)','rgba(190,230,255,.85)'][(x+y)%3];
+        ctx.fillStyle = petals;
+        ctx.beginPath(); ctx.arc(fx, fy, 1.4, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(fx-1.9, fy+0.8, 1.4, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(fx+1.9, fy+0.8, 1.4, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(fx-1, fy-1.7, 1.4, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(fx+1, fy-1.7, 1.4, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = 'rgba(250,204,21,.85)';
+        ctx.beginPath(); ctx.arc(fx, fy, 0.8, 0, Math.PI*2); ctx.fill();
+      } else if(seed2 === 7){
+        // 小灌木
+        const bx = r.x + 14 + (seed % (TILE-28)), by = r.y + 16 + ((seed*2) % (TILE-30));
+        ctx.strokeStyle = 'rgba(74,100,60,.8)'; ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.moveTo(bx, by+3); ctx.lineTo(bx, by-1); ctx.stroke();
+        ctx.fillStyle = 'rgba(74,130,80,.75)';
+        ctx.beginPath(); ctx.arc(bx-3, by-2, 2.8, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = 'rgba(90,155,95,.8)';
+        ctx.beginPath(); ctx.arc(bx+2.5, by-3.5, 2.6, 0, Math.PI*2); ctx.fill();
+      }
+    } else if(cell.type==='water'){
+      const g = ctx.createLinearGradient(r.x,r.y,r.x,r.y+TILE);
+      g.addColorStop(0,'#0e4f8f'); g.addColorStop(1,'#123f74');
+      ctx.fillStyle = g;
+      ctx.fillRect(r.x+2, r.y+2, TILE-4, TILE-4);
+      ctx.strokeStyle = 'rgba(125,211,252,.55)'; ctx.lineWidth = 1.6;
+      const wave = Math.sin(T*2.6 + x*1.2 + y)*3;
+      ctx.beginPath(); ctx.moveTo(r.x+4, r.y+TILE/2+wave); ctx.quadraticCurveTo(r.x+TILE/2, r.y+TILE/2-5+wave, r.x+TILE-4, r.y+TILE/2+wave); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(r.x+6, r.y+TILE/2+9-wave); ctx.quadraticCurveTo(r.x+TILE/2, r.y+TILE/2+4-wave, r.x+TILE-6, r.y+TILE/2+9-wave); ctx.stroke();
+      const tw = 0.35 + Math.sin(T*3 + x*2 + y)*0.3;
+      ctx.fillStyle = 'rgba(186,230,253,'+tw+')';
+      ctx.beginPath(); ctx.arc(r.x+7, r.y+7, 2, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = 'rgba(125,211,252,'+(tw*0.8)+')';
+      ctx.beginPath(); ctx.arc(r.x+TILE-8, r.y+TILE*0.3, 1.5, 0, Math.PI*2); ctx.fill();
+    } else if(cell.type==='portal'){
+      const pulse = Math.sin(T*3 + x+y)*0.5;
+      const pg = ctx.createRadialGradient(cx, cy, 2, cx, cy, TILE*0.45);
+      pg.addColorStop(0,'rgba(217,170,255,.95)'); pg.addColorStop(1,'rgba(88,28,135,.25)');
+      ctx.fillStyle = pg;
+      ctx.beginPath(); ctx.arc(cx, cy, TILE*0.42+pulse, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = 'rgba(233,213,255,.9)'; ctx.lineWidth = 2;
+      ctx.save(); ctx.translate(cx, cy); ctx.rotate(T*1.8);
+      ctx.beginPath(); ctx.ellipse(0, 0, TILE*0.32, TILE*0.14, 0, 0, Math.PI*2); ctx.stroke();
+      ctx.rotate(-T*3.4);
+      ctx.beginPath(); ctx.ellipse(0, 0, TILE*0.2, TILE*0.09, 0, 0, Math.PI*2); ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle = 'rgba(255,255,255,.8)';
+      ctx.beginPath(); ctx.arc(cx, cy, 2.5, 0, Math.PI*2); ctx.fill();
+    } else if(cell.type==='sheep'){
+      const bob = Math.sin(T*2.2 + x*3 + y)*1.6;
+      const k = Math.max(0.7, TILE/44);
+      const sx = r.x + TILE*0.5, sy = r.y + TILE*0.52 + bob;
+      // 四条腿（深色，先画；手机紧凑模式简化）
+      ctx.strokeStyle = '#57534e'; ctx.lineWidth = 2.4*k;
+      const legs = M ? [[-4,-1],[7,-1]] : [[-6,-1],[-2,-1],[5,-1],[9,-1]];
+      for(const lx of legs){
+        ctx.beginPath(); ctx.moveTo(sx+lx[0]*k, sy+lx[1]*k); ctx.lineTo(sx+lx[0]*k, sy+(lx[1]+7)*k); ctx.stroke();
+      }
+      // 蓬松羊毛身体（多个卷曲圆团）
+      ctx.fillStyle = '#f5f5f4';
+      ctx.beginPath(); ctx.arc(sx-7*k, sy-2*k, 6*k, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(sx-1*k, sy-4*k, 7*k, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(sx+6*k, sy-3*k, 6.5*k, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(sx+0, sy+3*k, 6.5*k, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(sx-4*k, sy+3*k, 5*k, 0, Math.PI*2); ctx.fill();
+      // 卷毛纹理点（手机紧凑模式略去）
+      if(!M){
+        ctx.fillStyle = 'rgba(196,190,184,.65)';
+        ctx.beginPath(); ctx.arc(sx-5*k, sy-3*k, 1.5*k, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(sx+1*k, sy-5*k, 1.5*k, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(sx+5*k, sy-4*k, 1.5*k, 0, Math.PI*2); ctx.fill();
+      }
+      // 深色羊头
+      ctx.fillStyle = '#44403c';
+      ctx.beginPath(); ctx.ellipse(sx+12*k, sy-5*k, 5.5*k, 4.5*k, 0, 0, Math.PI*2); ctx.fill();
+      // 耳朵
+      ctx.fillStyle = '#6b6460';
+      ctx.beginPath(); ctx.ellipse(sx+9*k, sy-9*k, 2.2*k, 3*k, -0.5, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(sx+16*k, sy-9*k, 2.2*k, 3*k, 0.5, 0, Math.PI*2); ctx.fill();
+      // 眼睛
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(sx+10.5*k, sy-5.5*k, 1.3*k, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(sx+15*k, sy-5.5*k, 1.3*k, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#111';
+      ctx.beginPath(); ctx.arc(sx+11*k, sy-5.5*k, 0.65*k, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(sx+15.5*k, sy-5.5*k, 0.65*k, 0, Math.PI*2); ctx.fill();
+      // 嘴前吃草（手机紧凑模式略去）
+      ctx.fillStyle = '#a3e635';
+      if(M) return;
+      ctx.beginPath(); ctx.ellipse(sx+17*k, sy+2*k, 3*k, 1.3*k, -.4, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = '#65a30d'; ctx.lineWidth = 1.2*k;
+      ctx.beginPath(); ctx.moveTo(sx+15*k, sy+3*k); ctx.lineTo(sx+13*k, sy+5*k); ctx.stroke();
+    } else if(cell.type==='barren'){
+      const g = ctx.createLinearGradient(r.x,r.y,r.x,r.y+TILE);
+      g.addColorStop(0,'#8a6a4a'); g.addColorStop(1,'#6b4f38');
+      ctx.fillStyle = g;
+      ctx.fillRect(r.x+2, r.y+2, TILE-4, TILE-4);
+      ctx.strokeStyle = 'rgba(45,28,14,.55)'; ctx.lineWidth = 1.3;
+      ctx.beginPath(); ctx.moveTo(r.x+6, r.y+5); ctx.lineTo(r.x+10, r.y+11); ctx.lineTo(r.x+8, r.y+19); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(r.x+17, r.y+7); ctx.lineTo(r.x+14, r.y+14); ctx.lineTo(r.x+19, r.y+20); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(r.x+11, r.y+10); ctx.lineTo(r.x+16, r.y+9); ctx.stroke();
+      ctx.fillStyle = 'rgba(245,222,179,.12)';
+      ctx.beginPath(); ctx.arc(r.x+6, r.y+7, 2.2, 0, Math.PI*2); ctx.fill();
+    } else if(cell.type==='farm'){
+      const g = ctx.createLinearGradient(r.x,r.y,r.x,r.y+TILE);
+      g.addColorStop(0,'#6b4524'); g.addColorStop(1,'#4a2e16');
+      ctx.fillStyle = g;
+      ctx.fillRect(r.x+2, r.y+2, TILE-4, TILE-4);
+      ctx.fillStyle = 'rgba(122,84,44,.9)';
+      ctx.fillRect(r.x+4, r.y+6, TILE-8, 3);
+      ctx.fillRect(r.x+4, r.y+6+TILE*0.32, TILE-8, 3);
+      ctx.fillRect(r.x+4, r.y+6+TILE*0.64, TILE-8, 3);
+      // 泥土颗粒
+      ctx.fillStyle = 'rgba(255,215,150,.14)';
+      for(let i=0;i<4;i++){
+        ctx.beginPath(); ctx.arc(r.x+8+((x*11+i*7+y*5)%(TILE-14)), r.y+8+((y*13+i*11+x*3)%(TILE-14)), 1.1, 0, Math.PI*2); ctx.fill();
+      }
+      ctx.strokeStyle = 'rgba(255,215,150,.08)';
+      ctx.lineWidth = 1.5;
+      roundRect(r.x+3.5, r.y+3.5, TILE-7, TILE-7, 6); ctx.stroke();
+      if(cell.crop==='planted') drawSeedling(cx, cy + TILE*0.10, cell.grow||0);
+      if(cell.crop==='young') drawSeedling(cx, cy + TILE*0.10, 1.2);
+      if(cell.crop==='ready'){
+        const wob = Math.sin(T*3 + x*2 + y);
+        ctx.save(); ctx.translate(cx, cy + TILE*0.06); ctx.rotate(wob*0.05);
+        drawCrop(0, 0, cell.cropName||'玉米');
+        ctx.restore();
+      }
+    } else if(cell.type==='fallow'){
+      const g = ctx.createLinearGradient(r.x,r.y,r.x,r.y+TILE);
+      g.addColorStop(0,'#233427'); g.addColorStop(1,'#1a281d');
+      ctx.fillStyle = g;
+      ctx.fillRect(r.x+2, r.y+2, TILE-4, TILE-4);
+      ctx.fillStyle = 'rgba(120,180,90,.15)';
+      for(let i=0;i<6;i++){
+        const gx = r.x + 10 + ((x*17+i*31+y*7)%(TILE-20));
+        const gy = r.y + 10 + ((x*11+i*23+y*13)%(TILE-20));
+        ctx.beginPath(); ctx.arc(gx,gy,2,0,Math.PI*2); ctx.fill();
+      }
+      ctx.strokeStyle = 'rgba(250,204,21,.3)'; ctx.lineWidth = 1.5; ctx.setLineDash([4,4]);
+      roundRect(r.x+8, r.y+8, TILE-16, TILE-16, 8); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(250,204,21,.55)';
+      ctx.font = Math.max(8, Math.min(10, TILE*0.2)) + 'px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText((TILE < 40 && (window.innerWidth || document.documentElement.clientWidth) < 1000) ? '垦' : '待开垦', cx, cy+4);
+    } else if(cell.type==='shop'){
+      const pulse = 0.5 + Math.sin(T*2.5)*0.2;
+      ctx.fillStyle = '#4a3d10';
+      ctx.fillRect(r.x+2, r.y+2, TILE-4, TILE-4);
+      ctx.fillStyle = 'rgba(250,204,21,'+(0.12*pulse)+')';
+      ctx.fillRect(r.x+4, r.y+4, TILE-8, TILE-8);
+      // 旋转金币标志
+      ctx.save(); ctx.translate(cx, cy); ctx.rotate(T*1.6);
+      ctx.fillStyle = '#facc15';
+      ctx.beginPath(); ctx.arc(0, 0, TILE*0.16, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = '#a16207'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(0, 0, TILE*0.16, 0, Math.PI*2); ctx.stroke();
+      ctx.fillStyle = '#a16207'; ctx.font = 'bold ' + Math.max(7, TILE*0.22) + 'px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('¥', 0, 1);
+      ctx.restore();
+      ctx.strokeStyle = 'rgba(250,204,21,'+(0.6*pulse)+')'; ctx.lineWidth = 2;
+      roundRect(r.x+8, r.y+8, TILE-16, TILE-16, 8); ctx.stroke();
+      ctx.save();
+      ctx.translate(cx, cy+2);
+      ctx.scale(1, 1 + Math.sin(T*3)*0.06);
+      ctx.fillStyle = '#facc15';
+      ctx.beginPath(); ctx.arc(0, 2, TILE*0.15, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#eab308';
+      ctx.font = 'bold ' + Math.round(TILE*0.13) + 'px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('$', 0, 3);
+      ctx.restore();
+      ctx.textBaseline = 'alphabetic';
+    } else if(cell.type==='stone'){
+      // 岩石：浅灰渐变、不规则轮廓、苔藓
+      ctx.fillStyle = 'rgba(0,0,0,.32)';
+      ctx.beginPath(); ctx.ellipse(cx, r.y+TILE-7, TILE*0.28, 5, 0, 0, Math.PI*2); ctx.fill();
+      const g = ctx.createLinearGradient(r.x, r.y+TILE*0.3, r.x, r.y+TILE*0.95);
+      g.addColorStop(0,'#8b98ad'); g.addColorStop(1,'#5d6b82');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(r.x+TILE*0.16, r.y+TILE*0.88);
+      ctx.lineTo(r.x+TILE*0.2, r.y+TILE*0.45);
+      ctx.lineTo(r.x+TILE*0.38, r.y+TILE*0.26);
+      ctx.lineTo(r.x+TILE*0.62, r.y+TILE*0.28);
+      ctx.lineTo(r.x+TILE*0.8, r.y+TILE*0.5);
+      ctx.lineTo(r.x+TILE*0.82, r.y+TILE*0.88);
+      ctx.closePath(); ctx.fill();
+      // 高光面
+      ctx.fillStyle = 'rgba(255,255,255,.3)';
+      ctx.beginPath();
+      ctx.moveTo(r.x+TILE*0.24, r.y+TILE*0.5);
+      ctx.lineTo(r.x+TILE*0.4, r.y+TILE*0.34);
+      ctx.lineTo(r.x+TILE*0.52, r.y+TILE*0.4);
+      ctx.lineTo(r.x+TILE*0.42, r.y+TILE*0.56);
+      ctx.closePath(); ctx.fill();
+      // 苔藓
+      ctx.fillStyle = 'rgba(74,222,128,.3)';
+      for(let i=0;i<3;i++){
+        ctx.beginPath();
+        ctx.arc(r.x+TILE*(0.28+i*0.18), r.y+TILE*(0.62+((x*3+y+i)%3)*0.12), Math.max(1.5, TILE*0.07), 0, Math.PI*2);
+        ctx.fill();
+      }
+      // 裂纹
+      ctx.strokeStyle = 'rgba(35,45,65,.55)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(r.x+TILE*0.42, r.y+TILE*0.72); ctx.lineTo(r.x+TILE*0.55, r.y+TILE*0.58); ctx.lineTo(r.x+TILE*0.5, r.y+TILE*0.44); ctx.stroke();
+    } else if(cell.type==='goal'){
+      const wave = Math.sin(T*3 + x)*0.08;
+      ctx.fillStyle = '#2a2410';
+      ctx.fillRect(r.x+2, r.y+2, TILE-4, TILE-4);
+      ctx.fillStyle = 'rgba(250,204,21,.08)';
+      ctx.fillRect(r.x+5, r.y+5, TILE-10, TILE-10);
+      ctx.strokeStyle = '#facc15'; ctx.lineWidth = 2;
+      roundRect(r.x+8, r.y+8, TILE-16, TILE-16, 8); ctx.stroke();
+      ctx.fillStyle = '#7a5c00';
+      ctx.fillRect(cx-3, r.y+16, 6, TILE*0.5);
+      ctx.fillStyle = '#facc15';
+      ctx.save();
+      ctx.translate(cx+3, r.y+18);
+      ctx.rotate(wave);
+      ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(TILE*0.26, TILE*0.1); ctx.lineTo(0, TILE*0.2); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+    // 执行中的当前格高亮（呼吸）
+    if(rt.highlightCell && rt.highlightCell.x===x && rt.highlightCell.y===y){
+      const glow = 0.45 + Math.sin(T*6)*0.3;
+      ctx.strokeStyle = 'rgba(74,222,128,'+glow+')';
+      ctx.lineWidth = 2.5;
+      roundRect(r.x+4, r.y+4, TILE-8, TILE-8, 8); ctx.stroke();
+    }
+    // 网格线
+    ctx.strokeStyle = 'rgba(255,255,255,.04)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(r.x, r.y, TILE, TILE);
+  }
+  // 机器人（带弹跳与移动插值）
+  if(rt.robot){
+    const px = ox + robotPos.x*TILE + TILE/2;
+    const py = oy + robotPos.y*TILE + TILE/2;
+    drawRobot(px, py, rt.robot.dir);
+  }
+
+  // 自由模式天气特效
+  if(rt.free && freeState.weather && freeState.weather !== 'sun') drawWeatherOverlay();
+
+  // 粒子
+  particles = particles.filter(p => p.life > 0);
+  for(const p of particles){
+    p.x += p.vx; p.y += p.vy; p.vy += 0.06; p.life -= 0.03;
+    ctx.globalAlpha = Math.max(0, p.life);
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
+  }
+  // 飘字（金币+N）
+  floats = floats.filter(f => f.life > 0);
+  for(const f of floats){
+    f.y -= 0.55; f.life -= 0.018;
+    ctx.globalAlpha = Math.max(0, Math.min(1, f.life*1.5));
+    ctx.fillStyle = "#facc15";
+    ctx.font = "bold 15px sans-serif"; ctx.textAlign = "center";
+    ctx.fillText(f.text, f.x, f.y);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function roundRect(x,y,w,h,rad){
+  ctx.beginPath();
+  ctx.moveTo(x+rad,y);
+  ctx.arcTo(x+w,y,x+w,y+h,rad);
+  ctx.arcTo(x+w,y+h,x,y+h,rad);
+  ctx.arcTo(x,y+h,x,y,rad);
+  ctx.arcTo(x,y,x+w,y,rad);
+  ctx.closePath();
+}
+
+function drawWeatherOverlay(){
+  const ox = (CANVAS_W - rt.w*TILE)/2, oy = (LOGIC_H - rt.h*TILE)/2;
+  const T = Date.now()/1000;
+  if(freeState.weather === 'rain'){
+    ctx.save();
+    ctx.globalAlpha = .32;
+    ctx.strokeStyle = '#7dd3fc'; ctx.lineWidth = 1.4;
+    for(let i=0;i<26;i++){
+      const px = ox + ((i*53 + (T*160)%4000)%(rt.w*TILE));
+      const py = oy + ((i*37 + T*280)%(rt.h*TILE));
+      ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px-3, py+9); ctx.stroke();
+    }
+    ctx.restore();
+  } else if(freeState.weather === 'drought'){
+    ctx.save();
+    ctx.globalAlpha = .14;
+    ctx.fillStyle = '#f97316';
+    ctx.fillRect(ox, oy, rt.w*TILE, rt.h*TILE);
+    ctx.globalAlpha = .5;
+    ctx.fillStyle = '#fde68a';
+    for(let i=0;i<5;i++){
+      const px = ox + ((i*97 + T*8)%(rt.w*TILE));
+      ctx.beginPath(); ctx.arc(px, oy + rt.h*TILE - 8 + Math.sin(T+i)*1.5, 2.5, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+  } else if(freeState.weather === 'cloud'){
+    ctx.save();
+    ctx.globalAlpha = .22;
+    ctx.fillStyle = '#94a3b8';
+    for(let i=0;i<3;i++){
+      const px = ox + ((i*180 + T*12)%(rt.w*TILE));
+      ctx.beginPath(); ctx.ellipse(px, oy+14, 26, 9, 0, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(px+16, oy+12, 18, 7, 0, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+function drawSeedling(cx, cy, grow){
+  const h = 8 + Math.min(13, (grow||0)*4);
+  const sway = Math.sin(Date.now()/260 + cx)*0.7;
+  ctx.strokeStyle = '#4ade80'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(cx, cy); ctx.quadraticCurveTo(cx+sway, cy-h*0.6, cx+sway*1.4, cy-h); ctx.stroke();
+  ctx.fillStyle = '#4ade80';
+  ctx.save();
+  ctx.translate(cx+sway*1.4, cy-h);
+  ctx.rotate(-.55);
+  ctx.beginPath(); ctx.ellipse(-4, 0, 4.5, 2.5, 0, 0, Math.PI*2); ctx.fill();
+  ctx.rotate(1.1);
+  ctx.beginPath(); ctx.ellipse(4, 0, 4.5, 2.5, 0, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+function drawCrop(cx, cy, name){
+  const c = CROPS[name] || CROPS['玉米'];
+  const k = Math.max(0.6, Math.min(1, TILE / 96));
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(k, k);
+  // 茎
+  ctx.strokeStyle = c.leaf; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(cx, cy+10); ctx.lineTo(cx, cy-6); ctx.stroke();
+  // 叶
+  ctx.fillStyle = c.leaf;
+  ctx.beginPath(); ctx.ellipse(cx-7, cy-2, 6, 3, -.5, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(cx+7, cy-2, 6, 3, .5, 0, Math.PI*2); ctx.fill();
+  // 果实
+  ctx.fillStyle = c.color;
+  if(name==='玉米'){
+    // 外层苞叶（绿色两片包住）
+    ctx.fillStyle = c.leaf;
+    ctx.beginPath();
+    ctx.moveTo(cx-13, cy+7);
+    ctx.quadraticCurveTo(cx-11, cy-4, cx-5, cy-12);
+    ctx.quadraticCurveTo(cx, cy-5, cx+5, cy-12);
+    ctx.quadraticCurveTo(cx+11, cy-4, cx+13, cy+7);
+    ctx.quadraticCurveTo(cx, cy+13, cx-13, cy+7);
+    ctx.fill();
+    // 苞叶纹理（两瓣缝）
+    ctx.strokeStyle = 'rgba(22,101,52,.35)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(cx-6, cy-9); ctx.quadraticCurveTo(cx-2, cy+2, cx-1, cy+9); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx+6, cy-9); ctx.quadraticCurveTo(cx+2, cy+2, cx+1, cy+9); ctx.stroke();
+    // 玉米棒（金黄圆角）
+    ctx.fillStyle = '#fbbf24';
+    roundRect(cx-7, cy-15, 14, 23, 3); ctx.fill();
+    ctx.fillStyle = '#fde68a';
+    roundRect(cx-5, cy-13, 10, 19, 2); ctx.fill();
+    // 玉米粒网格
+    ctx.strokeStyle = '#d97706'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(cx-2, cy-14); ctx.lineTo(cx-2, cy+7); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx+2, cy-14); ctx.lineTo(cx+2, cy+7); ctx.stroke();
+    for(let i=0;i<4;i++){ ctx.beginPath(); ctx.moveTo(cx-4.5, cy-11+i*5); ctx.lineTo(cx+4.5, cy-11+i*5); ctx.stroke(); }
+    // 顶部玉米须
+    ctx.strokeStyle = '#a16207'; ctx.lineWidth = 1.2;
+    for(let i=-4;i<=4;i+=4){
+      ctx.beginPath(); ctx.moveTo(cx+i, cy-14); ctx.quadraticCurveTo(cx+i+1, cy-19, cx+i+2, cy-22); ctx.stroke();
+    }
+  } else if(name==='萝卜'){
+    // 缨叶（两片绿叶从顶部伸出）
+    ctx.strokeStyle = c.leaf; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(cx, cy-10); ctx.quadraticCurveTo(cx-6, cy-16, cx-8, cy-21); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, cy-10); ctx.quadraticCurveTo(cx+6, cy-16, cx+8, cy-21); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, cy-10); ctx.quadraticCurveTo(cx, cy-16, cx, cy-22); ctx.stroke();
+    // 根茎（橙白渐变感）
+    ctx.fillStyle = c.color;
+    ctx.beginPath(); ctx.ellipse(cx, cy+2, 8, 12, 0, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.35)';
+    ctx.beginPath(); ctx.ellipse(cx-2.5, cy+2, 3, 8, 0, 0, Math.PI*2); ctx.fill();
+    // 细须根
+    ctx.strokeStyle = 'rgba(180,83,9,.5)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(cx-2, cy+13); ctx.quadraticCurveTo(cx-5, cy+17, cx-4, cy+21); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx+2, cy+13); ctx.quadraticCurveTo(cx+5, cy+17, cx+6, cy+20); ctx.stroke();
+  } else if(name==='番茄'){
+    ctx.beginPath(); ctx.arc(cx, cy+2, 9, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#4ade80';
+    ctx.beginPath(); ctx.ellipse(cx-5, cy-9, 4, 2.5, -.4, 0, Math.PI*2); ctx.fill();
+  } else if(name==='草莓'){
+    ctx.fillStyle = '#fb7185';
+    ctx.beginPath(); ctx.arc(cx, cy+2, 7.5, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,247,237,.85)';
+    ctx.beginPath(); ctx.arc(cx-2.5, cy, 1.5, 0, Math.PI*2); ctx.arc(cx+2.8, cy+2.5, 1.5, 0, Math.PI*2); ctx.arc(cx-0.2, cy+4, 1.5, 0, Math.PI*2); ctx.fill();
+  } else if(name==='西瓜'){
+    ctx.fillStyle = '#34d399';
+    ctx.beginPath(); ctx.ellipse(cx, cy+3, 9.5, 7, 0, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#166534'; ctx.lineWidth = 1.6;
+    for(let i=-1;i<=1;i++){ ctx.beginPath(); ctx.moveTo(cx+i*6.5, cy-4.5); ctx.quadraticCurveTo(cx+i*3, cy+2.5, cx+i*6, cy+9.5); ctx.stroke(); }
+  } else { // 小麦
+    ctx.strokeStyle = '#eab308'; ctx.lineWidth = 2;
+    for(let i=-6;i<=6;i+=6){
+      ctx.beginPath(); ctx.moveTo(cx, cy+8); ctx.quadraticCurveTo(cx+i, cy-2, cx+i, cy-14); ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+function drawRobot(cx, cy, dir){
+  const T = Date.now()/1000;
+  ctx.save();
+  ctx.translate(cx, cy + Math.floor(robotBob));
+  const k = Math.max(0.3, TILE / 96);   // 按格子大小缩放机器人
+  ctx.scale(k, k);
+  const tiltDir = dir===1 ? 1 : dir===3 ? -1 : 0;
+  ctx.rotate(robotTilt * tiltDir * 0.1);
+  // 影子
+  ctx.fillStyle = 'rgba(0,0,0,.35)';
+  ctx.beginPath(); ctx.ellipse(0, 27, 21, 6, 0, 0, Math.PI*2); ctx.fill();
+  // 履带轮子
+  ctx.fillStyle = '#141e33';
+  roundRect(-24, 14, 48, 12, 6); ctx.fill();
+  ctx.fillStyle = '#2d3d5c';
+  for(let i=-2;i<=2;i++){ ctx.fillRect(i*9-2, 16, 4, 8); }
+  // 身体渐变
+  const S = SKINS[state.skin]||SKINS[0];
+  const g = ctx.createLinearGradient(0,-18,0,22);
+  g.addColorStop(0,S.body0); g.addColorStop(1,S.body1);
+  ctx.fillStyle = g;
+  roundRect(-20, -17, 40, 38, 10); ctx.fill();
+  // 身体高光
+  ctx.fillStyle = 'rgba(255,255,255,.18)';
+  roundRect(-16, -14, 32, 7, 4); ctx.fill();
+  // 底盘呼吸 LED
+  const led = 0.5 + Math.sin(T*3)*0.5;
+  ctx.fillStyle = 'rgba(74,222,128,'+(0.5+led*0.5)+')';
+  roundRect(-14, 12, 28, 3, 1.5); ctx.fill();
+  ctx.fillStyle = 'rgba(250,204,21,'+(0.4+led*0.5)+')';
+  roundRect(6, 17, 3, 4, 1); ctx.fill();
+  // 手臂
+  ctx.fillStyle = S.arm;
+  roundRect(-27, -8, 6, 18, 3); ctx.fill();
+  roundRect(21, -8, 6, 18, 3); ctx.fill();
+  ctx.fillStyle = S.armHi;
+  ctx.beginPath(); ctx.arc(-24, -10, 3, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(24, -10, 3, 0, Math.PI*2); ctx.fill();
+  // 屏幕面板
+  ctx.fillStyle = S.screen;
+  roundRect(-16, -10, 32, 20, 6); ctx.fill();
+  ctx.strokeStyle = 'rgba('+S.scan+',.3)'; ctx.lineWidth = 1;
+  roundRect(-16, -10, 32, 20, 6); ctx.stroke();
+  // 屏幕扫描光带
+  const scan = (T*14) % 16 - 8;
+  ctx.save(); roundRect(-16, -10, 32, 20, 6); ctx.clip();
+  ctx.fillStyle = 'rgba('+S.scan+',.12)';
+  ctx.fillRect(-16, scan, 32, 4);
+  ctx.restore();
+  // 表情（朝向前方）
+  const ex = dir===0 ? 4 : dir===2 ? -4 : 0;
+  const ey = dir===1 ? 4 : dir===3 ? -4 : 0;
+  const blink = Math.sin(T*1.3 + cx) > 0.965;
+  if(robotSad){
+    ctx.strokeStyle = '#f87171'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(ex-7, ey-7); ctx.lineTo(ex-1, ey-1); ctx.moveTo(ex-1, ey-7); ctx.lineTo(ex-7, ey-1); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(ex+7, ey-7); ctx.lineTo(ex+1, ey-1); ctx.moveTo(ex+1, ey-7); ctx.lineTo(ex+7, ey-1); ctx.stroke();
+  } else if(robotHappy > 0){
+    ctx.strokeStyle = '#4ade80'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(ex-6, ey-2, 5, Math.PI*1.1, Math.PI*1.9); ctx.stroke();
+    ctx.beginPath(); ctx.arc(ex+6, ey-2, 5, Math.PI*1.1, Math.PI*1.9); ctx.stroke();
+    ctx.beginPath(); ctx.arc(ex, ey+5, 4.5, 0, Math.PI); ctx.stroke();
+  } else if(blink){
+    ctx.strokeStyle = '#e6edf3'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(ex-7, ey); ctx.lineTo(ex-1, ey); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(ex+1, ey); ctx.lineTo(ex+7, ey); ctx.stroke();
+  } else {
+    ctx.fillStyle = '#e6edf3';
+    ctx.beginPath(); ctx.arc(ex-6, ey, 6, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(ex+6, ey, 6, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#0d1220';
+    ctx.beginPath(); ctx.arc(ex-4, ey, 2.6, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(ex+8, ey, 2.6, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.75)';
+    ctx.beginPath(); ctx.arc(ex-5, ey-2, 1.2, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(ex+7, ey-2, 1.2, 0, Math.PI*2); ctx.fill();
+  }
+  // 天线呼吸灯
+  ctx.strokeStyle = '#93c5fd'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(0,-17); ctx.lineTo(0,-27); ctx.stroke();
+  const aglow = 0.7 + Math.sin(T*4)*0.3;
+  ctx.fillStyle = 'rgba(250,204,21,'+aglow+')';
+  ctx.beginPath(); ctx.arc(0,-29, 4 + Math.sin(T*4)*0.8, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+async function animateMove(){
+  const from = { x:robotPos.x, y:robotPos.y };
+  const to = { x:rt.robot.x, y:rt.robot.y };
+  const steps = 8;
+  for(let i=1;i<=steps;i++){
+    if(runAbort) return;
+    const t = i/steps;
+    robotPos.x = from.x + (to.x - from.x)*t;
+    robotPos.y = from.y + (to.y - from.y)*t;
+    robotTilt = Math.sin(t*Math.PI)*0.8;
+    renderMap();
+    await sleep(speed/steps);
+  }
+  robotPos.x = to.x; robotPos.y = to.y; robotTilt = 0;
+}
+
+function burst(cell, cropName, kind){
+  const ox = (CANVAS_W - rt.w*TILE)/2, oy = (LOGIC_H - rt.h*TILE)/2;
+  const cx = ox + rt.robot.x*TILE + TILE/2;
+  const cy = oy + rt.robot.y*TILE + TILE/2;
+  const base = kind==='plant' ? '#8b5a2b' : kind==='coin' ? '#facc15' : kind==='water' ? '#38bdf8' : kind==='portal' ? '#c084fc' : (CROPS[cropName]||{color:'#facc15'}).color;
+  if(kind==='harvest'){
+    // 收获：作物色主粒 + 白色闪光 + 金色上升星光
+    const cols = [base, '#ffffff', '#facc15'];
+    for(let i=0;i<20;i++){
+      const ang = Math.random()*Math.PI*2;
+      const spd = 2 + Math.random()*3;
+      particles.push({ x:cx, y:cy, vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd - 2.2, life:1, size:1.5+Math.random()*2.8, color:cols[i%3] });
+    }
+    for(let i=0;i<3;i++){
+      particles.push({ x:cx + (Math.random()-0.5)*16, y:cy, vx:(Math.random()-0.5)*0.6, vy:-2.2 - Math.random()*1.5, life:1.1, size:1.6, color:'#ffffff' });
+    }
+    return;
+  }
+  if(kind==='water'){
+    // 浇水：水滴弧 + 水花
+    for(let i=0;i<10;i++){
+      const ang = -Math.PI*0.9 + Math.random()*1.2;
+      const spd = 2.5 + Math.random()*2;
+      particles.push({ x:cx, y:cy, vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd, life:0.9, size:1.5+Math.random()*2.2, color:Math.random()<0.5 ? '#38bdf8' : '#7dd3fc' });
+    }
+    for(let i=0;i<6;i++){
+      particles.push({ x:cx+(Math.random()-0.5)*12, y:cy-2, vx:(Math.random()-0.5)*1, vy:-1 - Math.random(), life:1, size:1.8, color:'rgba(186,230,253,.95)' });
+    }
+    return;
+  }
+  if(kind==='portal'){
+    // 传送：紫色环绕粒子向内聚拢
+    for(let i=0;i<16;i++){
+      const ang = i/16*Math.PI*2;
+      particles.push({ x:cx + Math.cos(ang)*14, y:cy + Math.sin(ang)*14, vx:-Math.cos(ang)*1.4, vy:-Math.sin(ang)*1.4, life:1, size:1.8+Math.random()*2, color:i%2 ? '#c084fc' : '#e9d5ff' });
+    }
+    return;
+  }
+  if(kind==='coin'){
+    // 卖钱：金币向上喷
+    for(let i=0;i<18;i++){
+      const ang = Math.random()*Math.PI*2;
+      const spd = 1.5 + Math.random()*2.5;
+      particles.push({ x:cx, y:cy, vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd - 2.8, life:1.1, size:2+Math.random()*3, color:i%3===0 ? '#fef08a' : '#facc15' });
+    }
+    floats.push({ x:cx, y:cy-20, text:'+'+cropName, life:1.5 });
+    return;
+  }
+  const n = 13;
+  for(let i=0;i<n;i++){
+    const ang = Math.random()*Math.PI*2;
+    const spd = 1.5 + Math.random()*2.5;
+    particles.push({
+      x:cx, y:cy, vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd - 1.5,
+      life:1, size:2+Math.random()*3, color:base
+    });
+  }
+  if(kind==='plant'){
+    // 种植：再加几缕绿色生长光点向上飘
+    for(let i=0;i<5;i++){
+      particles.push({ x:cx+(Math.random()-0.5)*8, y:cy+6, vx:(Math.random()-0.5)*0.4, vy:-1.2 - Math.random()*1.2, life:0.9, size:1.5, color:'rgba(74,222,128,.9)' });
+    }
+  }
+}
+
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+function animateCount(id, target, ms){
+  const el = document.getElementById(id);
+  const start = performance.now();
+  const from = 0;
+  function step(now){
+    const t = Math.min(1, (now-start)/ms);
+    el.textContent = Math.round(from + (target-from)*(1-Math.pow(1-t,3)));
+    if(t < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+/* ---------------- 运行历史 ---------------- */
+const HIST_KEY = 'codefarmHist';
+const HIST_LANG = { python:'🐍 Py', javascript:'🌐 JS', cpp:'⚙️ C++' };
+function pushHistory(ok, detail){
+  try{
+    const code = $('codeInput').value;
+    let hist = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
+    if(!Array.isArray(hist)) hist = [];
+    hist.unshift({ t: Date.now(), lang: state.lang, ok: !!ok, detail: detail || '', code });
+    if(hist.length > 60) hist.length = 60;
+    localStorage.setItem(HIST_KEY, JSON.stringify(hist));
+  }catch(e){}
+}
+function renderHist(){
+  const list = $('histList');
+  let hist = [];
+  try{ hist = JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); if(!Array.isArray(hist)) hist = []; }catch(e){}
+  if(!hist.length){
+    list.innerHTML = '<div class="hist-empty">还没有运行记录。每次运行代码都会自动保存到这里，点记录即可恢复。</div>';
+    return;
+  }
+  list.innerHTML = '';
+  hist.forEach(it => {
+    const d = new Date(it.t||Date.now());
+    const tm = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0') + ':' + String(d.getSeconds()).padStart(2,'0');
+    const div = document.createElement('div');
+    div.className = 'hist-item';
+    div.title = it.code;
+    const t = document.createElement('span'); t.className = 'hi-t'; t.textContent = tm;
+    const lg = document.createElement('span'); lg.className = 'hi-lang'; lg.textContent = HIST_LANG[it.lang] || it.lang || '?';
+    const st = document.createElement('span'); st.className = 'hi-st ' + (it.ok ? 'ok' : 'fail'); st.textContent = it.ok ? '✅' : '❌';
+    const dd = document.createElement('span'); dd.className = 'hi-d'; dd.textContent = it.detail || (it.code ? it.code.split('\n')[0] : '');
+    div.appendChild(t); div.appendChild(lg); div.appendChild(st); div.appendChild(dd);
+    div.onclick = () => { loadHist(it); };
+    list.appendChild(div);
+  });
+}
+function loadHist(it){
+  if(!it || !it.code) return;
+  $('codeInput').value = it.code;
+  if(it.lang && it.lang !== state.lang) switchLang(it.lang);
+  else syncEditor();
+  $('histModal').classList.add('hidden');
+  beep('click');
+}
+function clearHist(){
+  try{ localStorage.removeItem(HIST_KEY); }catch(e){}
+  renderHist();
+  beep('click');
+}
+function openHist(){ renderHist(); $('histModal').classList.remove('hidden'); }
+function closeHist(){ $('histModal').classList.add('hidden'); }
+
+function initSplitter(){
+  const sp = document.getElementById('splitter');
+  if(!sp) return;
+  const panel = document.getElementById('mapPanel');
+  sp.addEventListener('mousedown', (e)=>{
+    e.preventDefault();
+    const sx = e.clientX, sw = panel.offsetWidth;
+    sp.classList.add('active');
+    const mv = (ev)=>{
+      let nw = sw + (ev.clientX - sx);
+      const maxW = (window.innerWidth || document.documentElement.clientWidth) - 445;
+      nw = Math.max(420, Math.min(nw, Math.max(420, maxW)));
+      panel.style.width = nw + 'px';
+      fitCanvas();
+    };
+    const up = ()=>{
+      document.removeEventListener('mousemove', mv);
+      document.removeEventListener('mouseup', up);
+      sp.classList.remove('active');
+      saveGame();
+    };
+    document.addEventListener('mousemove', mv);
+    document.addEventListener('mouseup', up);
+  });
+}
+
+/* ---------------- 控制台 ---------------- */
+function log(kind, text){
+  const out = $('consoleOut');
+  const div = document.createElement('div');
+  div.className = 'log-' + kind;
+  div.textContent = text;
+  out.appendChild(div);
+  out.scrollTop = out.scrollHeight;
+  const dot = $('consoleDot');
+  if(kind==='ok'){ dot.className='dot ok'; $('consoleTitle').textContent='控制台 · 成功'; }
+  else if(kind==='err'){ dot.className='dot err'; $('consoleTitle').textContent='控制台 · 出错'; }
+  else if(kind==='run'||kind==='info'){ dot.className='dot run'; $('consoleTitle').textContent='控制台 · 运行中'; }
+  else { dot.className='dot'; $('consoleTitle').textContent='控制台'; }
+}
+
+/* ---------------- 语法高亮 ---------------- */
+const HL_KEYWORDS = {
+  python:['def','for','in','range','if','else','elif','while','return','True','False','None','and','or','not'],
+  javascript:['let','const','var','for','if','else','function','return','while','true','false'],
+  cpp:['int','void','for','if','else','while','return','true','false']
+};
+const HL_API = {
+  python:['move','turn_left','turn_right','plant','harvest','water','print','sell','buy_land','can_move','is_ready','can_plant'],
+  javascript:['move','turnLeft','turnRight','plant','harvest','water','console','sell','buyLand','canMove','isReady','canPlant'],
+  cpp:['move','turnLeft','turnRight','plant','harvest','water','print','sell','buyLand','canMove','isReady','canPlant']
+};
+
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ---- 指令手册 ---- */
+const HELP_SECTIONS = [
+  { title:'🚶 移动与转向', rows:[
+    ['move()','前进一格。墙、石头、河流、羊都会挡住去路'],
+    ['turn_left() / turn_right()','原地左转 / 右转（机器人初始朝右）']
+  ]},
+  { title:'🌱 种植与收获', rows:[
+    ['plant("作物")','在农田种下作物。作物名：玉米5 / 萝卜8 / 番茄15 / 小麦25 / 草莓40 / 西瓜80 金币'],
+    ['water()','给当前格的作物浇水，成长 +2'],
+    ['harvest()','收获当前格成熟的作物，进库存']
+  ]},
+  { title:'💰 经济', rows:[
+    ['sell()','站在商店（金色💰格）卖出全部库存换金币'],
+    ['buy_land()','花 30 金币开垦最近的土地（先待开垦地，开完可开草地）']
+  ]},
+  { title:'🤔 条件判断（返回 真/假）', rows:[
+    ['can_move()','前方能走吗？（Python: can_move()，JS/C++: canMove()）'],
+    ['is_ready()','当前格的作物成熟了吗？（is_ready() / isReady()）'],
+    ['can_plant()','当前格能种下作物吗？（can_plant() / canPlant()）']
+  ]},
+  { title:'📢 输出', rows:[
+    ['print(...)','在控制台打印文字、数字或变量。JS 用 console.log("...")']
+  ]},
+  { title:'🧩 三种语言的写法对照', code:
+`【变量赋值】
+Python:  x = 3
+JS:      let x = 3;
+C++:     int x = 3;
+（支持 + - * / % 和括号，比如 y = (x + 3) / 2）
+
+【for 循环】
+Python:  for i in range(3):
+JS:      for (let i=0; i<3; i++) {
+C++:     for (int i=0; i<3; i++) {
+
+【条件判断】
+Python:  if can_move():
+JS/C++:  if (canMove()) {
+（else 同理，JS/C++ 的 } else { 要分开两行写）
+
+【自定义函数】
+Python:  def 收菜():
+JS:      function 收菜() {
+C++:     void 收菜() {
+定义后写 收菜() 就能调用` },
+  { title:'💡 常见套路', code:
+`【种一排菜】走到地里一排排种：
+for i in range(3):
+    move()
+    plant("玉米")
+
+【巡田收菜】成熟了就收：
+for i in range(3):
+    harvest()
+    move()
+
+【绕开障碍】前面走不了就转弯：
+if can_move():
+    move()
+else:
+    turn_left()
+
+【完整种收卖】自由模式新手流程：
+move()
+move()
+plant("玉米")
+water()
+harvest()
+move()
+sell()` }
+];
+
+function renderHelpModal(){
+  let html = '';
+  for(const sec of HELP_SECTIONS){
+    html += '<div class="help-sec"><h3>' + sec.title + '</h3>';
+    if(sec.rows){
+      for(const r of sec.rows){
+        html += '<div class="help-row"><div class="cname">' + r[0] + '</div><div class="cdesc">' + r[1] + '</div></div>';
+      }
+    }
+    if(sec.code){ html += '<div class="help-code">' + escapeHtml(sec.code) + '</div>'; }
+    html += '</div>';
+  }
+  $('helpBody').innerHTML = html;
+}
+function openHelp(){
+  if(state.running) return;
+  renderHelpModal();
+  $('helpModal').classList.remove('hidden');
+}
+function closeHelp(){ $('helpModal').classList.add('hidden'); }
+
+function renderBadgeWall(){
+  if(!state.badges) state.badges = [];
+  const wall = $('badgeWall');
+  if(!wall) return;
+  let html = '';
+  for(const b of BADGES){
+    const owned = state.badges.includes(b.id);
+    html += '<div class="badge-card ' + (owned?'owned':'locked') + '">' +
+      '<span class="badge-icon">' + (owned?b.icon:'🔒') + '</span>' +
+      '<div class="badge-name">' + (owned?b.name:'???') + '</div>' +
+      '<div class="badge-desc">' + (owned?b.desc:'达成条件保密') + '</div></div>';
+  }
+  wall.innerHTML = html;
+  $('badgeCount').textContent = state.badges.length + ' / ' + BADGES.length;
+}
+function openBadge(){
+  if(state.running) return;
+  renderBadgeWall();
+  $('badgeModal').classList.remove('hidden');
+}
+function closeBadge(){ $('badgeModal').classList.add('hidden'); }
+
+function renderSkinWall(){
+  if(!state.skin) state.skin = 'default';
+  const wall = $('skinWall'); if(!wall) return;
+  let html = '';
+  for(const s of SKINS){
+    const owned = s.unlock();
+    html += '<div class="skin-card '+(state.skin===s.id?'active':'')+(owned?'':' locked')+'"'+(owned?' onclick="selectSkin(\''+s.id+'\')"':'')+'>' +
+      '<div class="skin-swatch" style="background:linear-gradient(135deg,'+s.body0+','+s.body1+')"></div>' +
+      '<div class="skin-name">'+s.icon+' '+s.name+'</div>' +
+      '<div class="skin-desc">'+(owned?(state.skin===s.id?'✔ 使用中':'点击换上'):s.lockDesc)+'</div></div>';
+  }
+  wall.innerHTML = html;
+}
+function selectSkin(id){ state.skin = id; saveGame(); renderSkinWall(); beep('click'); renderMap(); }
+function openSkin(){
+  if(state.running) return;
+  renderSkinWall();
+  $('skinModal').classList.remove('hidden');
+}
+function closeSkin(){ $('skinModal').classList.add('hidden'); }
+
+function renderExamples(){
+  const list = $('exList'); if(!list) return;
+  const tag = { python:'Python', javascript:'JavaScript', cpp:'C++' }[state.lang] || '?';
+  $('exLangTag').textContent = '当前语言：' + tag;
+  let html = '';
+  for(const ex of EXAMPLES){
+    const code = ex[state.lang] || ex.python;
+    html += '<div class="ex-row"><div>' +
+      '<div class="ex-title">' + ex.title + '</div>' +
+      '<div class="ex-desc">' + ex.desc + '</div></div>' +
+      '<button class="ex-btn" onclick="loadExample(\'' + ex.id + '\')">载入</button></div>';
+  }
+  list.innerHTML = html;
+}
+function loadExample(id){
+  const ex = EXAMPLES.find(e => e.id === id);
+  if(!ex) return;
+  const code = ex[state.lang] || ex.python;
+  $('codeInput').value = code;
+  syncEditor();
+  closeExample();
+  log('info', '📚 已载入示例「' + ex.title + '」——点「运行」看看效果');
+  beep('click');
+}
+function openExample(){
+  if(state.running) return;
+  renderExamples();
+  $('exModal').classList.remove('hidden');
+}
+function closeExample(){ $('exModal').classList.add('hidden'); }
+
+function renderStats(){
+  const body = $('statsBody'); if(!body) return;
+  const done = Object.keys(state.best).length;
+  const stars = Object.values(state.stars).reduce((a,b)=>a+b,0);
+  const bestSteps = Object.values(state.best).reduce((a,b)=>a+(b.steps||0),0);
+  const wealth = (state.coins||0) + (freeState.totalEarned||0);
+  const pct = Math.round(done / LEVELS.length * 100);
+  body.innerHTML =
+    '<div class="stats-sec"><h3>🗂 关卡进度</h3>' +
+    '<div class="stats-row"><span>已通关</span><b>' + done + ' / ' + LEVELS.length + ' 关（' + pct + '%）</b></div>' +
+    '<div class="stats-row"><span>总星数</span><b>⭐ ' + stars + '</b></div>' +
+    '<div class="stats-row"><span>最优步数合计</span><b>' + bestSteps + ' 步</b></div></div>' +
+    '<div class="stats-sec"><h3>🖥 编程练习</h3>' +
+    '<div class="stats-row"><span>成功运行次数</span><b>' + (state.runCount||0) + ' 次</b></div>' +
+    '<div class="stats-row"><span>出错次数（语法+运行时）</span><b>' + (state.errorCount||0) + ' 次</b></div></div>' +
+    '<div class="stats-sec"><h3>🌾 自由农场</h3>' +
+    '<div class="stats-row"><span>累计行走</span><b>' + (freeState.totalSteps||0) + ' 步</b></div>' +
+    '<div class="stats-row"><span>种下作物</span><b>' + (freeState.plantedTotal||0) + ' 棵</b></div>' +
+    '<div class="stats-row"><span>完成订单</span><b>' + (freeState.ordersDone||0) + ' 个</b></div></div>' +
+    '<div class="stats-sec"><h3>💰 财富</h3>' +
+    '<div class="stats-row"><span>关卡金币</span><b>🪙 ' + (state.coins||0) + '</b></div>' +
+    '<div class="stats-row"><span>自由农场累计赚取</span><b>🪙 ' + (freeState.totalEarned||0) + '</b></div>' +
+    '<div class="stats-row"><span>身家合计</span><b>🪙 ' + wealth + '</b></div></div>' +
+    '<div class="stats-sec"><h3>🏅 成就</h3>' +
+    '<div class="stats-row"><span>已解锁徽章</span><b>' + (state.badges?state.badges.length:0) + ' / ' + BADGES.length + '</b></div></div>' +
+    '<div class="stats-hint">数据自动保存，换浏览器前记得在同一设备上玩哦</div>';
+}
+function openStats(){
+  if(state.running) return;
+  renderStats();
+  $('statsModal').classList.remove('hidden');
+}
+function closeStats(){ $('statsModal').classList.add('hidden'); }
+
+function highlight(code, lang){
+  const kw = new Set(HL_KEYWORDS[lang]);
+  const api = new Set(HL_API[lang]);
+  const lines = code.split('\n');
+  let out = '';
+  lines.forEach((line, i) => {
+    let html = '';
+    // 字符串与注释的粗处理
+    let seg = escapeHtml(line);
+    // 行内注释
+    let commentMark = lang==='python' ? '#' : '//';
+    let cIdx = seg.indexOf(commentMark);
+    if(cIdx !== -1){
+      // 避免把字符串内的 # 当注释（简化：Python 的 # 在引号内忽略）
+      if(lang==='python'){
+        const q = seg.indexOf('"');
+        const q2 = seg.indexOf("'");
+        const firstQ = q===-1 ? q2 : (q2===-1 ? q : Math.min(q,q2));
+        if(firstQ !== -1 && firstQ < cIdx){
+          // 引号在注释符前，粗判断：注释符可能在字符串后
+          // 不精确，交给下面统一处理
+        }
+      }
+      seg = seg.slice(0, cIdx) + '<span class="hl-c">' + seg.slice(cIdx) + '</span>';
+    }
+    // 字符串
+    seg = seg.replace(/&quot;(.*?)&quot;/g, '<span class="hl-s">&quot;$1&quot;</span>');
+    seg = seg.replace(/'(.*?)'/g, '<span class="hl-s">\'$1\'</span>');
+    // 关键字
+    seg = seg.replace(/([a-zA-Z_\u4e00-\u9fa5][\w\u4e00-\u9fa5]*)/g, (m, w) => {
+      if(kw.has(w)) return '<span class="hl-k">' + w + '</span>';
+      if(api.has(w)) return '<span class="hl-a">' + w + '</span>';
+      return w;
+    });
+    // 数字
+    seg = seg.replace(/\b(\d+)\b/g, '<span class="hl-n">$1</span>');
+    out += '<span>' + seg + '</span>' + (i < lines.length-1 ? '\n' : '');
+  });
+  return out;
+}
+
+function syncEditor(){
+  const code = $('codeInput').value;
+  $('hlLayer').innerHTML = highlight(code, state.lang);
+  const lines = code.split('\n').length;
+  let nums = '';
+  for(let i=1;i<=lines;i++) nums += '<span>' + i + '</span>\n';
+  $('lineNums').innerHTML = nums;
+  $('lineNums').scrollTop = $('codeInput').scrollTop;
+  $('hlLayer').scrollTop = $('codeInput').scrollTop;
+}
+
+/* ---------------- UI：委托面板 ---------------- */
+function renderMission(){
+  const lv = LEVELS[state.levelIdx];
+  $('lvNum').textContent = '委托 ' + lv.id;
+  $('lvName').textContent = lv.name;
+  $('lvStory').textContent = lv.story;
+  const goal = lv.goal;
+  const chips = [];
+  if(goal.type==='plant') chips.push({ text:'🌱 种下 ' + goal.need + ' 棵「' + goal.crop + '」', ok:false });
+  if(goal.type==='harvest') chips.push({ text:'🌾 收获 ' + goal.need + ' 棵作物', ok:false });
+  if(goal.type==='both'){
+    if(goal.plantNeed>0) chips.push({ text:'🌱 种 ' + goal.plantNeed + ' 棵「' + goal.crop + '」', ok:false });
+    if(goal.harvestNeed>0) chips.push({ text:'🌾 收获 ' + goal.harvestNeed + ' 棵', ok:false });
+    if(goal.reach) chips.push({ text:'🚩 把作物送到仓库', ok:false });
+  }
+  renderGoalChips(chips);
+  $('optRow').innerHTML = '最优参考：<b>' + lv.optimalSteps + ' 步</b> / <b>' + lv.optimalLines + ' 行</b> —— 达成可得 ⭐⭐⭐';
+}
+
+function renderGoalChips(chips){
+  const row = $('goalRow');
+  row.innerHTML = '';
+  chips.forEach(c => {
+    const el = document.createElement('span');
+    el.className = 'goal-chip' + (c.ok ? ' ok' : '');
+    el.textContent = c.text;
+    row.appendChild(el);
+  });
+}
+
+/* ---------------- UI：语言与编辑 ---------------- */
+function switchLang(lang){
+  if(!LANGS[lang]) return;
+  const prev = state.lang;
+  state.lang = lang;
+  $('langSelect').value = lang;
+  const code = $('codeInput').value;
+  const isFresh = (code.trim()==='' || !prev || code === LANGS[prev].template || code === LANGS[lang].template);
+  if(isFresh){
+    $('codeInput').value = LANGS[lang].template;
+  } else {
+    log('warn', '💡 切换了语言，当前代码保留（不同语言语法不同，运行前建议点「重置」换上新语言的模板）');
+  }
+  syncEditor();
+  renderHelp();
+}
+
+function renderHelp(){
+  $('helpPanel').innerHTML = LANGS[state.lang].help;
+}
+
+function setRunningUI(running){
+  state.running = running;
+  $('btnRun').disabled = running;
+  const canStop = running && rt && rt.free;
+  $('btnReset').disabled = running && !canStop;
+  $('codeInput').readOnly = running;
+  $('btnRun').textContent = running ? '⏳ 执行中…' : '▶ 运行代码';
+  $('btnReset').textContent = canStop ? '⏹ 停止' : '↺ 重置';
+}
+
+/* ---------------- 关卡流程 ---------------- */
+/* ---------------- 自由模式 ---------------- */
+const FREE_TEMPLATE = {
+  python: '# 自由农场 · 用代码实现自动化' + '\n' + '# 示例：向前走两步，种下玉米' + '\n' + 'move()' + '\n' + 'move()' + '\n' + 'plant("玉米")' + '\n' + '# 提示：作物种下后每走一步长一点，成熟后 harvest()' + '\n' + '# 进阶：用 while True: 写自动巡田脚本',
+  javascript: '// 自由农场 · 用代码实现自动化' + '\n' + '// 示例：向前走两步，种下玉米' + '\n' + 'move();' + '\n' + 'move();' + '\n' + 'plant("玉米");' + '\n' + '// 提示：作物种下后每走一步长一点，成熟后 harvest();' + '\n' + '// 进阶：用 while (true) { } 写自动巡田脚本',
+  cpp: '// 自由农场 · 用代码实现自动化' + '\n' + '// 示例：向前走两步，种下玉米' + '\n' + 'move();' + '\n' + 'move();' + '\n' + 'plant("玉米");' + '\n' + '// 提示：作物种下后每走一步长一点，成熟后 harvest();' + '\n' + '// 进阶：用 while (true) { } 写自动巡田脚本'
+};
+
+function countFallow(){
+  if(!rt) return 0;
+  let n = 0;
+  for(const row of rt.grid) for(const cell of row) if(cell.type==='fallow' || cell.type==='grass') n++;
+  return n;
+}
+
+function updateFreeHUD(){
+  if(freeState.order && freeState.totalSteps >= freeState.order.expireAt){
+    log('warn', '📋 订单「' + freeState.order.crop + '」超时了，来了一份新订单');
+    newOrder();
+  }
+  const ob = $('orderBar');
+  if(freeState.order){
+    const remain = Math.max(0, freeState.order.expireAt - freeState.totalSteps);
+    ob.innerHTML = '📋 订单：<b>' + freeState.order.crop + '</b> ×' + freeState.order.need +
+      ' <span class="ob-prog">（已交 ' + freeState.order.got + '）</span> → 奖励 🪙<b>' + freeState.order.reward + '</b>' +
+      '<span style="opacity:.65; margin-left:6px;">⏳ 剩 ' + remain + ' 步</span>';
+    ob.classList.remove('hidden');
+  } else {
+    ob.classList.add('hidden');
+  }
+  $('freeMoney').textContent = freeState.money;
+  $('hudCoins').textContent = freeState.money;
+  const w = WEATHER_INFO[freeState.weather] || WEATHER_INFO['sun'];
+  $('freeWeather').innerHTML = '<span>' + w.emoji + ' ' + w.name + '</span> <span style="color:var(--dim2)">' + w.desc + '</span>';
+  const inv = $('freeInv');
+  inv.innerHTML = '';
+  for(const crop of ['玉米','萝卜','番茄','小麦','草莓','西瓜']){
+    const el = document.createElement('span');
+    el.className = 'inv-chip' + (freeState.unlocked[crop] ? '' : ' locked');
+    el.textContent = crop + ' ×' + freeState.inventory[crop];
+    inv.appendChild(el);
+  }
+  const tech = $('freeTech');
+  tech.innerHTML = '';
+  for(const crop of ['萝卜','番茄','小麦','草莓','西瓜']){
+    if(freeState.unlocked[crop]) continue;
+    const b = document.createElement('button');
+    b.className = 'tech-btn';
+    b.textContent = '🔓 ' + crop + ' 🪙' + CROP_UNLOCK[crop];
+    b.title = '解锁后可在农田种植「' + crop + '」，售价 ' + CROP_PRICES[crop] + ' 金币/个';
+    b.disabled = freeState.money < CROP_UNLOCK[crop];
+    b.onclick = () => buyUnlock(crop);
+    tech.appendChild(b);
+  }
+  if(!freeState.unlocked['洒水器']){
+    const b = document.createElement('button');
+    b.className = 'tech-btn';
+    b.textContent = '🚿 洒水器 🪙' + SPRINKLER_COST;
+    b.title = '每10步自动给全田作物+1成长';
+    b.disabled = freeState.money < SPRINKLER_COST;
+    b.onclick = () => buyUnlock('洒水器');
+    tech.appendChild(b);
+  }
+  const remain = countFallow();
+  if(remain > 0){
+    const b = document.createElement('button');
+    b.className = 'tech-btn';
+    b.textContent = '⛏ 开垦土地 🪙' + LAND_COST + '（剩' + remain + '）';
+    b.title = '优先开垦最近的待开垦地；待开垦地开完后，草地也能开垦成农田（离机器人最近优先）';
+    b.disabled = freeState.money < LAND_COST;
+    b.onclick = buyLand;
+    tech.appendChild(b);
+  }
+  if(!tech.children.length){
+    tech.innerHTML = '<span class="tech-done">🎉 全部科技已解锁！</span>';
+  }
+  $('freeHint').innerHTML = (window.innerWidth || document.documentElement.clientWidth) < 1000
+    ? '💡 <span style="color:#61afef">water()</span>浇水 · 40步换天气 · 🌊/🐑挡路 · ✨传送 · 草地可开垦'
+    : '💡 提示：<span style="color:#61afef">water()</span> 可浇水；每 40 步天气轮换（🌧️ 生长翻倍 / 🌵 干旱停长）。地图新增：🌊 河流与羊挡路、✨ 传送门可瞬移、🏜 贫瘠地走得过种不了。草地也能花钱开垦成农田（待开垦优先）。';
+}
+
+function buyUnlock(crop){
+  const cost = crop==='洒水器' ? SPRINKLER_COST : CROP_UNLOCK[crop];
+  if(freeState.unlocked[crop] || freeState.money < cost) return;
+  freeState.money -= cost;
+  freeState.unlocked[crop] = true;
+  log('ok', crop==='洒水器' ? '🚿 已解锁自动洒水器！每10步自动给全田作物加成长' : '🔓 已解锁「' + crop + '」！现在可以 plant("' + crop + '") 了');
+  updateFreeHUD(); saveGame();
+  checkBadges();
+}
+
+const EXAMPLES = [
+  { id:'hello', title:'顺序执行 · 种一棵玉米', desc:'最基础的三步：走、走、种。所有代码都是从上到下一行行执行的。',
+    python:"move()\nmove()\nmove()\nplant(\"玉米\")",
+    javascript:"move();\nmove();\nmove();\nplant(\"玉米\");",
+    cpp:"move();\nmove();\nmove();\nplant(\"玉米\");" },
+  { id:'loop', title:'循环 · 种一排玉米', desc:'for 让同一段代码重复 N 次——种 4 棵田只写 2 行核心动作。',
+    python:"for i in range(4):\n    move()\n    plant(\"玉米\")",
+    javascript:"for (let i=0; i<4; i++) {\n    move();\n    plant(\"玉米\");\n}",
+    cpp:"for (int i=0; i<4; i++) {\n    move();\n    plant(\"玉米\");\n}" },
+  { id:'cond', title:'条件 · 能走就走，不能就绕', desc:'if/else 让机器人做判断：前方能走就直走，被挡就左转绕路。',
+    python:"if can_move():\n    move()\nelse:\n    turn_left()\n    move()",
+    javascript:"if (canMove()) {\n    move();\n} else {\n    turnLeft();\n    move();\n}",
+    cpp:"if (canMove()) {\n    move();\n} else {\n    turnLeft();\n    move();\n}" },
+  { id:'var', title:'变量 · 存数字算算术', desc:'把值存进变量，再算个表达式，用 print 把结果打印到控制台。',
+    python:"x = 3\ny = x * 2 + 1\nprint(y)",
+    javascript:"let x = 3;\nlet y = x * 2 + 1;\nconsole.log(y);",
+    cpp:"int x = 3;\nint y = x * 2 + 1;\nprint(y);" },
+  { id:'func', title:'函数 · 打包动作复用', desc:'def 把几步动作打包成「招式」，喊名字就能整段执行——写一次用 N 次。',
+    python:"def 种田():\n    move()\n    plant(\"玉米\")\n种田()\nmove()",
+    javascript:"function 种田() {\n    move();\n    plant(\"玉米\");\n}\n种田();\nmove();",
+    cpp:"void 种田() {\n    move();\n    plant(\"玉米\");\n}\n种田();\nmove();" },
+  { id:'while', title:'while · 走到不能走为止', desc:'while 会一直重复，直到条件变假——适合不知道要走多少步的场景。',
+    python:"while can_move():\n    move()",
+    javascript:"while (can_move()) {\n    move();\n}",
+    cpp:"while (can_move()) {\n    move();\n}" },
+  { id:'farm', title:'自由农场 · 种 → 等 → 收', desc:'自由模式小脚本：走到农田种玉米，原地等它成熟（转弯也算步数），再收获。',
+    python:"move()\nmove()\nplant(\"玉米\")\nfor i in range(4):\n    turn_left()\n    turn_right()\nharvest()",
+    javascript:"move();\nmove();\nplant(\"玉米\");\nfor (let i=0; i<4; i++) {\n    turn_left();\n    turn_right();\n}\nharvest();",
+    cpp:"move();\nmove();\nplant(\"玉米\");\nfor (int i=0; i<4; i++) {\n    turn_left();\n    turn_right();\n}\nharvest();" },
+  { id:'sell', title:'自由农场 · 走到商店卖货', desc:'卖货要去金色💰商店：右 2 步、转向、下 5 步就到西侧商店，sell() 清空库存换金币。',
+    python:"for i in range(2):\n    move()\nturn_right()\nfor i in range(5):\n    move()\nsell()",
+    javascript:"for (let i=0; i<2; i++) {\n    move();\n}\nturn_right();\nfor (let i=0; i<5; i++) {\n    move();\n}\nsell();",
+    cpp:"for (int i=0; i<2; i++) {\n    move();\n}\nturn_right();\nfor (int i=0; i<5; i++) {\n    move();\n}\nsell();" }
+];
+const SKINS = [
+  { id:'default', name:'小农机器人', icon:'🤖', body0:'#60a5fa', body1:'#2563eb', arm:'#1d4ed8', armHi:'#93c5fd', screen:'#0d1830', scan:'96,165,250',
+    unlock:()=>true, lockDesc:'' },
+  { id:'gold', name:'黄金农夫', icon:'🥇', body0:'#fde68a', body1:'#d97706', arm:'#b45309', armHi:'#fcd34d', screen:'#2a1a00', scan:'250,204,21',
+    unlock:()=>((state.coins||0)+freeState.totalEarned)>=200, lockDesc:'累计赚取 200 金币解锁' },
+  { id:'crystal', name:'代码行者', icon:'💠', body0:'#c4b5fd', body1:'#7c3aed', arm:'#6d28d9', armHi:'#ddd6fe', screen:'#1a0f2e', scan:'167,139,250',
+    unlock:()=>LEVELS.every(l=>state.best[l.id]), lockDesc:'通关全部 12 关解锁' },
+  { id:'rainbow', name:'彩虹机', icon:'🌈', body0:'#f9a8d4', body1:'#db2777', arm:'#be185d', armHi:'#fbcfe8', screen:'#2a0a1e', scan:'244,114,182',
+    unlock:()=>freeState.ordersDone>=10, lockDesc:'完成 10 个订单解锁' }
+];
+const BADGES = [
+  { id:'first',   icon:'🎯', name:'初出茅庐',     desc:'完成第 1 关',              check:()=>!!state.best[1] },
+  { id:'perf',    icon:'🌟', name:'完美开局',     desc:'任意 1 关拿到 3 星',       check:()=>Object.values(state.stars).some(s=>s>=3) },
+  { id:'chapter4',icon:'🏆', name:'函数大师',     desc:'第 4 章三关全部 3 星',     check:()=>[10,11,12].every(id=>(state.stars[id]||0)>=3) },
+  { id:'finish',  icon:'🔥', name:'通关全关卡',   desc:'通关全部 12 关',           check:()=>LEVELS.every(l=>state.best[l.id]) },
+  { id:'plant1',  icon:'🌱', name:'农场新手',     desc:'在自由农场种下第一棵作物', check:()=>(freeState.plantedTotal||0)>0 },
+  { id:'order1',  icon:'📋', name:'订单小能手',   desc:'完成第一个订单',           check:()=>freeState.ordersDone>=1 },
+  { id:'order10', icon:'📦', name:'订单批发商',   desc:'累计完成 10 个订单',       check:()=>freeState.ordersDone>=10 },
+  { id:'steps500',icon:'⏱', name:'辛勤劳作',     desc:'自由农场累计走满 500 步',  check:()=>freeState.totalSteps>=500 },
+  { id:'steps2k', icon:'🚜', name:'铁人农夫',     desc:'自由农场累计走满 2000 步', check:()=>freeState.totalSteps>=2000 },
+  { id:'sprinkler',icon:'💧',name:'自动化先驱',   desc:'解锁自动洒水器',           check:()=>!!freeState.unlocked['洒水器'] },
+  { id:'crops',   icon:'🍅', name:'作物收藏家',   desc:'解锁全部 6 种作物',        check:()=>Object.keys(CROP_PRICES).every(c=>freeState.unlocked[c]) },
+  { id:'rich',    icon:'💎', name:'富甲一方',     desc:'累计财富达到 1000 金币',   check:()=>((state.coins||0)+freeState.totalEarned)>=1000 }
+];
+function checkBadges(){
+  if(!state.badges) state.badges = [];
+  let got = false;
+  for(const b of BADGES){
+    if(state.badges.includes(b.id)) continue;
+    try{
+      if(b.check()){
+        state.badges.push(b.id);
+        log('win', '🏅 成就解锁：' + b.icon + ' ' + b.name + ' — ' + b.desc);
+        beep('badge');
+        got = true;
+      }
+    }catch(e){}
+  }
+  if(got){ saveGame(); renderBadgeWall(); }
+}
+function newOrder(){
+  const unlockedCrops = Object.keys(CROP_PRICES).filter(c => freeState.unlocked[c]);
+  if(!unlockedCrops.length){ freeState.order = null; return; }
+  const crop = unlockedCrops[Math.floor(Math.random()*unlockedCrops.length)];
+  const need = 2 + Math.floor(Math.random()*3);   // 2-4 个
+  const reward = need * (CROP_PRICES[crop]||5) * 2; // 市场价 2 倍奖励
+  freeState.order = { crop, need, got:0, reward, expireAt: freeState.totalSteps + 120 };
+  updateFreeHUD();
+}
+function buyLand(){
+  if(freeState.money < LAND_COST || !rt) return;
+  const find = (types) => {
+    let best = null, bd = Infinity;
+    for(let y=0;y<rt.h;y++) for(let x=0;x<rt.w;x++){
+      const cell = rt.grid[y][x];
+      if(types.indexOf(cell.type) >= 0){
+        const d = Math.abs(x-rt.robot.x) + Math.abs(y-rt.robot.y);
+        if(d < bd){ bd = d; best = {cell, kind: cell.type}; }
+      }
+    }
+    return best;
+  };
+  const t = find(['fallow']) || find(['grass']);
+  if(!t){ log('warn', '没有可开垦的地了（待开垦地和草地都开垦完了）'); return; }
+  t.cell.type = 'farm'; t.cell.crop = null; t.cell.cropName = null;
+  freeState.money -= LAND_COST;
+  freeState.lands++;
+  renderMap();
+  log('ok', t.kind==='grass' ? '⛏ 开垦了一片草地当农田！' : '⛏ 开垦了一块新农田！');
+  updateFreeHUD(); saveGame();
+}
+
+function startFree(showTipFlag){
+  if(state.running && rt && rt.free) return;
+  state.mode = 'free';
+  $('chapterBadge').textContent = '🆓 自由模式';
+  $('btnFree').textContent = '← 返回关卡';
+  $('missionPanel').classList.add('hidden');
+  $('freePanel').classList.remove('hidden');
+  $('btnChapter').disabled = true;
+  runAbort = true;
+  rt = newRuntime(FREE_MAP, 'free');
+  runtime = rt;
+  robotPos = { x:rt.robot.x, y:rt.robot.y };
+  particles = []; robotBob = 0;
+  $('codeInput').value = FREE_TEMPLATE[state.lang] || LANGS[state.lang].template;
+  syncEditor();
+  $('consoleOut').innerHTML = '';
+  $('consoleDot').className = 'dot';
+  $('consoleTitle').textContent = '控制台';
+  setRunningUI(false);
+  if(!freeState.order) newOrder();
+  updateFreeHUD();
+  renderMap();
+  if(showTipFlag === false) return;
+  showTip({ tip:{ title:'自由农场 · 怎么玩', body:'<b>目标</b>：写代码让机器人自动种收卖，攒钱解锁科技，把农场做大。<br><br>· 走到<b>农田</b>（棕色）用 <span style="color:#61afef">plant("玉米")</span> 种下<br>· 作物种下后<b>每走一步长一点</b>，成熟后 <span style="color:#61afef">harvest()</span> 收获进库存<br>· 走到商店（<b>💰</b>格）用 <span style="color:#61afef">sell()</span> 卖出库存换金币<br>· 用金币在右侧解锁<b>新作物</b>和<b>开垦土地</b>（草地也能开垦）<br><br>· 试试 <span style="color:#c678dd">while True:</span>（或 while (true) { }）写自动巡田脚本<br>· 脚本可随时用「⏹ 停止」中断<br>· 每次运行最多 ' + FREE_MAX_STEPS + ' 步会自动停止' }});
+}
+
+function exitFree(){
+  state.mode = 'level';
+  $('btnFree').textContent = '🆓 自由模式';
+  $('btnChapter').disabled = false;
+  $('freePanel').classList.add('hidden');
+  $('missionPanel').classList.remove('hidden');
+  startLevel(state.levelIdx, false);
+  updateHud();
+}
+
+function startLevel(idx, showDialog){
+  state.levelIdx = idx;
+  // 从自由模式（含存档恢复）切回关卡时复位面板
+  state.mode = 'level';
+  $('btnFree').textContent = '🆓 自由模式';
+  $('btnChapter').disabled = false;
+  $('freePanel').classList.add('hidden');
+  $('missionPanel').classList.remove('hidden');
+  runAbort = true;
+  rt = newRuntime(LEVELS[idx].map, 'level');
+  runtime = rt;
+  robotPos = { x:rt.robot.x, y:rt.robot.y };
+  particles = [];
+  robotBob = 0;
+  const lv = LEVELS[idx];
+  $('chapterBadge').textContent = '第 ' + lv.chapter + ' 章 · ' + lv.chapterName;
+  $('codeInput').value = LANGS[state.lang].template;
+  syncEditor();
+  $('consoleOut').innerHTML = '';
+  $('consoleDot').className = 'dot';
+  $('consoleTitle').textContent = '控制台';
+  setRunningUI(false);
+  renderMission();
+  renderMap();
+  if(showDialog){
+    showDialogModal(idx);
+  }
+}
+
+function showDialogModal(idx){
+  const lv = LEVELS[idx];
+  $('dialogSay').innerHTML = lv.story;
+  let goalHtml = '';
+  const g = lv.goal;
+  if(g.type==='plant') goalHtml = '🌱 目标：种下 <b>' + g.need + ' 棵「' + g.crop + '」</b>';
+  if(g.type==='harvest') goalHtml = '🌾 目标：收获 <b>' + g.need + ' 棵作物</b>';
+  if(g.type==='both'){
+    const parts = [];
+    if(g.plantNeed>0) parts.push('种 ' + g.plantNeed + ' 棵「' + g.crop + '」');
+    if(g.harvestNeed>0) parts.push('收获 ' + g.harvestNeed + ' 棵');
+    if(g.reach) parts.push('走到仓库');
+    goalHtml = '🎯 目标：' + parts.join('，') ;
+  }
+  goalHtml += '<br>💡 提示：先用 <b>' + (state.lang==='python' ? 'move()' : 'move();') + '</b> 前进，再试试别的指令';
+  $('dialogGoal').innerHTML = goalHtml;
+  $('dialogModal').classList.remove('hidden');
+  $('btnDialogTip').onclick = () => { showTip(lv); };
+  $('btnDialogGo').onclick = () => { $('dialogModal').classList.add('hidden'); $('codeInput').focus(); };
+}
+
+function showTip(lv){
+  $('tipTitle').textContent = lv.tip.title;
+  $('tipBody').innerHTML = lv.tip.body;
+  $('tipModal').classList.remove('hidden');
+}
+
+function showResult(stars, steps, lines, opt, coin, newBest){
+  const starHtml = [1,2,3].map(i =>
+    '<span class="star' + (i<=stars?' on':'') + '" style="animation-delay:' + (i*0.15) + 's">⭐</span>'
+  ).join('');
+  $('rStars').innerHTML = starHtml;
+  const names = ['', '勉强完成', '干得不错', '完美委托！'];
+  $('rTitle').textContent = names[stars];
+  $('rSub').textContent = stars===3 ? '最优路线，机器人给你点赞！' : (stars===2 ? '完成了委托，再优化几步就是三星！' : '委托完成，多想想更短的路线');
+  $('rSteps').textContent = steps;
+  $('rLines').textContent = lines;
+  $('rOpt').textContent = opt;
+  animateCount('rCoins', coin, 600);
+  const lv = LEVELS[state.levelIdx];
+  const hasNext = state.levelIdx < LEVELS.length - 1;
+  $('rUnlock').innerHTML = newBest ? '🏆 刷新了你的最好成绩！' : '';
+  $('btnResultNext').textContent = hasNext ? '下一个委托 →' : '🏆 第 1 章通关！';
+  $('btnResultNext').style.display = hasNext || state.levelIdx===LEVELS.length-1 ? '' : 'none';
+  $('resultModal').classList.remove('hidden');
+  $('btnResultRetry').onclick = () => { $('resultModal').classList.add('hidden'); resetLevel(); };
+  $('btnResultNext').onclick = () => {
+    $('resultModal').classList.add('hidden');
+    if(state.levelIdx < LEVELS.length-1) startLevel(state.levelIdx+1, true);
+    else { /* 第1章完结弹窗 */ showChapterDone(); }
+  };
+}
+
+function showChapterDone(){
+  const lv = LEVELS[state.levelIdx];
+  const ch = lv.chapter, chName = lv.chapterName;
+  const nextDesc = {
+    1:'下一章「循环」——用短短几行代码完成重复的工作',
+    2:'下一章「条件判断」——让程序自己决定该走哪条路',
+    3:'下一章「函数」——把常用步骤打包，写一次用很多次',
+    4:'你已经掌握编程的四大基础结构，去「自由农场」大展身手吧！'
+  }[ch];
+  $('tipTitle').textContent = '第 ' + ch + ' 章通关！';
+  $('tipBody').innerHTML = '恭喜你完成了第 ' + ch + ' 章「' + chName + '」的所有委托！<br><br>' +
+    (ch === 4
+      ? '<b style="color:var(--green)">顺序 · 循环 · 条件 · 函数</b>，编程的四大基础结构你已经全部拿下。<br><br>自由农场在等你：写一段脚本，让机器人自动种收卖、攒钱解锁科技，实现真正的<b>自动化农场</b>。'
+      : '你已经掌握了本章的核心：<b style="color:var(--green)">' + ['程序一行一行执行','用循环消除重复','让代码自己判断'][ch-1] + '</b>。<br><br>' + nextDesc + '，敬请期待！');
+  $('tipModal').classList.remove('hidden');
+  $('btnTipClose').onclick = () => { $('tipModal').classList.add('hidden'); };
+}
+
+function resetLevel(){
+  if(debugMode) finishDebug();
+  rt = newRuntime(state.mode === 'free' ? FREE_MAP : null, state.mode || 'level');
+  runtime = rt;
+  robotPos = { x:rt.robot.x, y:rt.robot.y };
+  particles = [];
+  robotBob = 0;
+  renderMap();
+  syncEditor();
+  renderMission();
+  log('info', '↺ 地图已重置，可以修改代码再试');
+}
+
+/* ---------------- 音效 ---------------- */
+let audioCtx = null;
+let soundOn = true;
+function tone(freq, dur, type, vol, when, freq2){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    const t = audioCtx.currentTime + (when||0);
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type||'sine';
+    osc.frequency.setValueAtTime(freq, t);
+    if(freq2) osc.frequency.exponentialRampToValueAtTime(freq2, t+dur);
+    gain.gain.setValueAtTime(vol||0.12, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t+dur);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(t); osc.stop(t+dur+0.03);
+  }catch(e){}
+}
+function beep(kind){
+  if(!soundOn) return;
+  switch(kind){
+    case 'move':   tone(240, 0.07, 'square', 0.05); break;
+    case 'turn':   tone(180, 0.06, 'triangle', 0.07); break;
+    case 'plant':  tone(440, 0.1, 'sine', 0.1, 0, 660); break;
+    case 'harvest': tone(660, 0.09, 'sine', 0.1); tone(880, 0.13, 'sine', 0.1, 0.08); break;
+    case 'coin':   tone(1318, 0.08, 'square', 0.07); tone(1568, 0.16, 'square', 0.07, 0.07); break;
+    case 'water':  tone(530, 0.09, 'sine', 0.09, 0, 720); tone(700, 0.13, 'sine', 0.07, 0.09, 420); break;
+    case 'portal': tone(300, 0.35, 'sine', 0.09, 0, 1300); tone(950, 0.2, 'sine', 0.05, 0.12, 420); break;
+    case 'click':  tone(620, 0.04, 'square', 0.04); break;
+    case 'win':    tone(523,0.12,'sine',0.15); tone(659,0.12,'sine',0.15,0.11); tone(784,0.2,'sine',0.15,0.22); tone(1046,0.32,'sine',0.12,0.34); break;
+    case 'fail':   tone(330,0.14,'triangle',0.1); tone(262,0.22,'triangle',0.1,0.14); break;
+    case 'error':  tone(180,0.2,'sawtooth',0.1,0,120); break;
+  }
+}
+function toggleSound(){
+  soundOn = !soundOn;
+  const b = $('btnSound');
+  if(b) b.textContent = soundOn ? '🔊' : '🔇';
+  try{ localStorage.setItem('codefarmSound', soundOn ? '1' : '0'); }catch(e){}
+  if(soundOn) beep('click');
+}
+
+/* ---------------- 章节选择 ---------------- */
+function openChapter(){
+  $('chGrid').innerHTML = '';
+  const CH_NAMES = { 1:'顺序执行', 2:'循环', 3:'条件判断', 4:'函数' };
+  const CH_ICONS = { 1:'🌱', 2:'🔁', 3:'⚖️', 4:'📦' };
+  let curCh = 0;
+  LEVELS.forEach((lv, i) => {
+    if(lv.chapter !== curCh){
+      curCh = lv.chapter;
+      const sec = document.createElement('div');
+      sec.className = 'ch-sec';
+      const chDone = LEVELS.filter(x=>x.chapter===curCh).every(x=>(state.stars[x.id]||0)>0);
+      sec.innerHTML = '<div class="ch-sec-title">' + CH_ICONS[curCh] + ' 第 ' + curCh + ' 章 · ' + (CH_NAMES[curCh]||lv.chapterName) + ' <span class="ch-sec-state">' + (chDone ? '✅ 已通关' : '') + '</span></div>';
+      $('chGrid').appendChild(sec);
+    }
+    const star = state.stars[lv.id]||0;
+    const el = document.createElement('div');
+    el.className = 'ch-cell';
+    const starStr = [1,2,3].map(n => n<=star ? '⭐' : '<span class="off">⭐</span>').join('');
+    el.innerHTML = '<div class="cn">委托 ' + lv.id + '</div><div class="cl">' + lv.name + '</div><div class="cs">' + starStr + '</div>';
+    el.onclick = () => {
+      if(state.running) return;
+      $('chapterModal').classList.add('hidden');
+      if(state.mode === 'free'){ exitFree(); }
+      startLevel(i, true);
+    };
+    $('chGrid').appendChild(el);
+  });
+  $('chapterModal').classList.remove('hidden');
+}
+
+/* ---------------- 恢复上次页面 ---------------- */
+function applyTab(tab){
+  $('tabCode').classList.remove('active'); $('tabHelp').classList.remove('active');
+  $('editorWrap').classList.add('hidden'); $('helpPanel').classList.add('hidden');
+  if(tab === 'help'){
+    $('tabHelp').classList.add('active');
+    $('helpPanel').classList.remove('hidden');
+  } else {
+    $('tabCode').classList.add('active');
+    $('editorWrap').classList.remove('hidden');
+  }
+}
+function restoreLastPage(){
+  const m = state.mode || 'level';
+  if(m === 'free'){ startFree(false); }
+  else { startLevel(state.levelIdx || 0, false); }
+  if(state.restoreCode){
+    $('codeInput').value = state.restoreCode;
+    syncEditor();
+  }
+  applyTab(state.tab || 'code');
+  const ls = document.getElementById('langSelect');
+  if(ls) ls.value = state.lang;
+  if(state.splitW && (window.innerWidth || document.documentElement.clientWidth) > 1000){
+    const mp = document.getElementById('mapPanel');
+    if(mp){ mp.style.width = Math.max(420, Math.min(state.splitW, (window.innerWidth||document.documentElement.clientWidth) - 445)) + 'px'; fitCanvas(); }
+  }
+  renderHelp();
+  updateHud();
+}
+
+/* ---------------- 初始化 ---------------- */
+function init(){
+  loadGame();
+  if(state.lang){
+    $('bootScreen').classList.add('hidden');
+    $('gameScreen').classList.remove('hidden');
+    restoreLastPage();
+  }
+  // 语言选择
+  document.querySelectorAll('.lang-card').forEach(card => {
+    card.onclick = () => {
+      const lang = card.dataset.lang;
+      state.lang = lang;
+      saveGame();
+      $('bootScreen').classList.add('hidden');
+      $('gameScreen').classList.remove('hidden');
+      startLevel(0, true);
+      renderHelp();
+      updateHud();
+    };
+  });
+  // 语言下拉
+  $('langSelect').onchange = e => switchLang(e.target.value);
+  // 运行/重置
+  $('btnRun').onclick = runCode;
+  $('btnHelp').onclick = openHelp;
+  $('btnHelpClose').onclick = closeHelp;
+  $('tabBadge').onclick = openBadge;
+  $('btnSkin').onclick = openSkin;
+  $('btnSkinClose').onclick = closeSkin;
+  $('btnExample').onclick = openExample;
+  $('btnExClose').onclick = closeExample;
+  $('btnStats').onclick = openStats;
+  $('btnStatsClose').onclick = closeStats;
+  $('btnHist').onclick = openHist;
+  $('btnHistClose').onclick = closeHist;
+  $('btnHistClear').onclick = clearHist;
+  initSplitter();
+  $('btnBadgeClose').onclick = closeBadge;
+  $('btnDebug').onclick = () => {
+    if(debugMode){ if(debugResolve){ const r = debugResolve; debugResolve = null; r(); } return; }
+    if(state.running) return;
+    debugMode = true;
+    $('btnDebug').classList.add('active');
+    $('btnDebug').textContent = '⏭ 下一步';
+    $('debugBar').classList.remove('hidden');
+    runCode();
+  };
+  $('btnDebugExit').onclick = () => {
+    runAbort = true;
+    if(debugResolve){ const r = debugResolve; debugResolve = null; r(); }
+    finishDebug();
+    setTimeout(() => { runAbort = false; }, 80);
+  };
+  $('btnReset').onclick = () => {
+    if(state.running && rt && rt.free){ runAbort = true; return; }
+    if(!state.running) resetLevel();
+  };
+  // 编辑同步
+  $('codeInput').addEventListener('input', syncEditor);
+  $('codeInput').addEventListener('scroll', () => {
+    $('lineNums').scrollTop = $('codeInput').scrollTop;
+    $('hlLayer').scrollTop = $('codeInput').scrollTop;
+  });
+  $('codeInput').addEventListener('keydown', e => {
+    if(e.key === 'Tab'){
+      e.preventDefault();
+      const el = $('codeInput');
+      const start = el.selectionStart, end = el.selectionEnd;
+      el.value = el.value.slice(0,start) + '    ' + el.value.slice(end);
+      el.selectionStart = el.selectionEnd = start + 4;
+      syncEditor();
+    }
+  });
+  // 速度
+  document.querySelectorAll('.speed-btn').forEach(b => {
+    b.onclick = () => {
+      document.querySelectorAll('.speed-btn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      speed = parseInt(b.dataset.speed);
+    };
+  });
+  // 标签
+  $('tabCode').onclick = () => {
+    $('tabCode').classList.add('active'); $('tabHelp').classList.remove('active');
+    $('editorWrap').classList.remove('hidden'); $('helpPanel').classList.add('hidden');
+    saveGame();
+  };
+  $('tabHelp').onclick = () => {
+    $('tabHelp').classList.add('active'); $('tabCode').classList.remove('active');
+    $('editorWrap').classList.add('hidden'); $('helpPanel').classList.remove('hidden');
+    saveGame();
+  };
+  // 弹窗
+  $('btnTipClose').onclick = () => $('tipModal').classList.add('hidden');
+  $('btnSound').onclick = toggleSound;
+  try{ if(localStorage.getItem('codefarmSound') === '0'){ soundOn = false; $('btnSound').textContent = '🔇'; } }catch(e){}
+
+  window.addEventListener('beforeunload', saveGame);
+  $('btnChapter').onclick = openChapter;
+  $('btnFree').onclick = () => { if(state.mode==='free') exitFree(); else startFree(); };
+  $('btnChapterClose').onclick = () => $('chapterModal').classList.add('hidden');
+  // 键盘快捷键
+  document.addEventListener('keydown', e => {
+    if((e.ctrlKey||e.metaKey) && e.key==='Enter'){
+      e.preventDefault();
+      if(!state.running) runCode();
+    }
+  });
+
+}
+
+function updateHud(){
+  const totalStars = Object.values(state.stars).reduce((a,b)=>a+b,0);
+  $('hudStars').textContent = totalStars;
+  $('hudStarTotal').textContent = LEVELS.length*3;
+  $('hudCoins').textContent = (state.mode === 'free') ? freeState.money : state.coins;
+}
+
+// 动画循环（粒子/机器人弹跳）
+setInterval(() => {
+  if(!rt) return;
+  robotBob = Math.sin(Date.now()/180)*2.5;
+  if(robotHappy > 0) robotHappy -= 0.06;
+  renderMap();
+}, 40);
+
+init();
+</script>
+</body>
+</html>
