@@ -899,7 +899,7 @@ const LEVELS = [
       '.........'
     ],
     optimalSteps:12, optimalLines:5,
-    tip:{ title:'数组 + 条件：筛选清单', body:'遍历清单时可以用 if 挑出要处理的：<br><br><b style="color:#61afef">Python</b><br><span style="color:#c678dd">for i in range(4):</span><br>&nbsp;&nbsp;&nbsp;&nbsp;move()<br>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#c678dd">if crops[i] != "萝卜":</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;plant(crops[i])<br><br><b style="color:#61afef">JavaScript / C++</b><br><span style="color:#c678dd">for (let i=0; i<4; i++) {</span><br>&nbsp;&nbsp;&nbsp;&nbsp;move();<br>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#c678dd">if (crops[i] != "萝卜") {</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;plant(crops[i]);<br>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#c678dd">}</span><br><span style="color:#c678dd">}</span><br><br><b style="color:var(--green)">crops[i] != "萝卜"</b> 的意思是"清单里这一项不是萝卜"。把条件写进循环，就能对每一件数据做筛选——这是处理数据的核心思路。' }
+    tip:{ title:'数组 + 条件：筛选清单', body:'遍历清单时可以用 if 挑出要处理的：<br><br><b style="color:#61afef">Python</b><br><span style="color:#c678dd">for i in range(4):</span><br>&nbsp;&nbsp;&nbsp;&nbsp;move()<br>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#c678dd">if crops[i] != "萝卜":</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;plant(crops[i])<br><br><b style="color:#61afef">JavaScript / C++</b><br><span style="color:#c678dd">for (let i=0; i<4; i++) {</span><br>&nbsp;&nbsp;&nbsp;&nbsp;move();<br>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#c678dd">if (crops[i] != "萝卜") {</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;plant(crops[i]);<br>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#c678dd">}</span><br><span style="color:#c678dd">}</span><br><br><b style="color:var(--green)">crops[i] != "萝卜"</b> 的意思是"清单里这一项不是萝卜"。把条件写进循环，就能对每一件数据做筛选——这是处理数据的核心思路。<br><br><span style="color:#c084fc">🪄 彩蛋：自由模式解锁「传送门」科技后，传送门的坐标也能存进数组——把门的 x 坐标放一个数组、y 坐标放一个数组，循环 buildPortal(gx[i], gy[i]) 批量放门！试试吧。</span>' }
   }
 ];
 
@@ -3304,9 +3304,13 @@ const EXAMPLES = [
     javascript:"let crops = [\"玉米\", \"萝卜\", \"番茄\"];\nfor (let i=0; i<3; i++) {\n    move();\n    plant(crops[i]);\n}",
     cpp:"string crops[] = {\"玉米\", \"萝卜\", \"番茄\"};\nfor (int i=0; i<3; i++) {\n    move();\n    plant(crops[i]);\n}" },
   { id:'teleport', title:'传送门 · 买门放置配对', desc:'自由模式解锁「传送门」科技 → 买门（右侧面板）→ buildPortal 放置两个门 → pairPortal 配对：机器人走到任意一扇门会瞬移到另一扇。（坐标从 0 开始）',
-    python:"# 先解锁科技并买 2 个传送门（右侧面板）\nbuildPortal(2, 2)\nbuildPortal(8, 4)\npairPortal(2, 2, 8, 4)",
-    javascript:"// 先解锁科技并买 2 个传送门（右侧面板）\nbuildPortal(2, 2);\nbuildPortal(8, 4);\npairPortal(2, 2, 8, 4);",
-    cpp:"// 先解锁科技并买 2 个传送门（右侧面板）\nbuildPortal(2, 2);\nbuildPortal(8, 4);\npairPortal(2, 2, 8, 4);" },
+    python:"# 先解锁科技并买 2 个传送门（右侧面板）\nbuildPortal(1, 0)\nbuildPortal(13, 0)\npairPortal(1, 0, 13, 0)",
+    javascript:"// 先解锁科技并买 2 个传送门（右侧面板）\nbuildPortal(1, 0);\nbuildPortal(13, 0);\npairPortal(1, 0, 13, 0);",
+    cpp:"// 先解锁科技并买 2 个传送门（右侧面板）\nbuildPortal(1, 0);\nbuildPortal(13, 0);\npairPortal(1, 0, 13, 0);" },
+  { id:'gate_array', title:'传送门 × 数组 · 坐标批量管理', desc:'把门的坐标存进两个「平行数组」，循环放置、下标配对——数组和传送门一次打通：gx[i] 和 gy[i] 合起来就是第 i 扇门的位置。',
+    python:"# 平行数组：第 i 扇门的坐标 = (gx[i], gy[i])\ngx = [1, 13]\ngy = [9, 9]\nfor i in range(2):\n    buildPortal(gx[i], gy[i])\npairPortal(gx[0], gy[0], gx[1], gy[1])",
+    javascript:"// 平行数组：第 i 扇门的坐标 = (gx[i], gy[i])\nlet gx = [1, 13];\nlet gy = [9, 9];\nfor (let i=0; i<2; i++) {\n    buildPortal(gx[i], gy[i]);\n}\npairPortal(gx[0], gy[0], gx[1], gy[1]);",
+    cpp:"// 平行数组：第 i 扇门的坐标 = (gx[i], gy[i])\nint gx[] = {1, 13};\nint gy[] = {9, 9};\nfor (int i=0; i<2; i++) {\n    buildPortal(gx[i], gy[i]);\n}\npairPortal(gx[0], gy[0], gx[1], gy[1]);" },
   { id:'func', title:'函数 · 打包动作复用', desc:'def 把几步动作打包成「招式」，喊名字就能整段执行——写一次用 N 次。',
     python:"def 种田():\n    move()\n    plant(\"玉米\")\n种田()\nmove()",
     javascript:"function 种田() {\n    move();\n    plant(\"玉米\");\n}\n种田();\nmove();",
