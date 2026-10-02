@@ -203,15 +203,6 @@ main{ flex:1; display:flex; gap:0; min-height:0; }
 #consoleOut .log-info{ color:var(--dim); }
 #consoleOut .log-print{ color:var(--text); }
 #consoleOut .log-warn{ color:var(--orange); }
-.hist-list{ max-height:320px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; margin:10px 0 4px; }
-.hist-item{ display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:9px; background:var(--panel2); border:1px solid var(--border); cursor:pointer; transition:all .15s; font-size:12.5px; }
-.hist-item:hover{ border-color:var(--green); transform:translateX(2px); }
-.hi-t{ color:var(--dim2); font-family:Consolas,monospace; font-size:11.5px; flex:none; }
-.hi-lang{ flex:none; font-size:11px; padding:1px 7px; border-radius:6px; background:rgba(96,165,250,.15); color:#8ab4f8; }
-.hi-st{ flex:none; }
-.hi-st.ok{ color:var(--green); } .hi-st.fail{ color:var(--red); }
-.hi-d{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--dim); }
-.hist-empty{ padding:24px 12px; text-align:center; color:var(--dim2); font-size:13px; }
 
 /* 按钮行 */
 #btnRow{ flex:none; display:flex; gap:10px; padding:0 20px 10px; }
@@ -345,7 +336,7 @@ main{ flex:1; display:flex; gap:0; min-height:0; }
   #consoleOut{ min-height:70px; }
   .speed-btn{ min-height:34px; min-width:42px; }
   #consoleOut{ font-size:13px; }
-  #tipModal .modal-box, #histModal .modal-box{ max-width:94vw; }
+  #tipModal .modal-box{ max-width:94vw; }
   /* 顶栏换行压缩 */
   header{ flex-wrap:wrap; gap:5px 8px; padding:7px 10px; }
   .game-title{ font-size:15px; flex:none; }
@@ -475,7 +466,6 @@ main{ flex:1; display:flex; gap:0; min-height:0; }
           <button id="btnSkin" class="btn" title="机器人皮肤">🎨 皮肤</button>
           <button id="btnExample" class="btn" title="示例代码库">📚 示例</button>
           <button id="btnStats" class="btn" title="数据统计">📊 数据</button>
-          <button id="btnHist" class="btn" title="运行历史（自动保存）">📜 历史</button>
           <button id="btnDebug" class="btn">🐞 单步调试</button>
           <button id="btnRun" class="btn">▶ 运行代码</button>
           <button id="btnReset" class="btn">↺ 重置</button>
@@ -568,19 +558,6 @@ main{ flex:1; display:flex; gap:0; min-height:0; }
     <div class="stats-body" id="statsBody"></div>
     <div class="modal-btn-row">
       <button class="mbtn primary" id="btnStatsClose">知道了</button>
-    </div>
-  </div>
-</div>
-
-<!-- ============ 运行历史 ============ -->
-<div id="histModal" class="modal-mask hidden">
-  <div class="modal" style="max-width:620px;">
-    <h2 style="font-size:18px; margin-bottom:4px;">📜 运行历史</h2>
-    <div class="help-sub">每次运行都会自动保存，点记录即可恢复到编辑器（最多保留 60 条）</div>
-    <div class="hist-list" id="histList"></div>
-    <div class="modal-btn-row">
-      <button class="mbtn ghost" id="btnHistClear">🗑 清空历史</button>
-      <button class="mbtn primary" id="btnHistClose">关闭</button>
     </div>
   </div>
 </div>
@@ -1161,6 +1138,12 @@ function parseStmtPy(ln, lines, idx){
     const body = parseBlockPy(lines, idx+1, ln.indent);
     return { node:{ type:'while', body:body.stmts, line }, nextIdx:body.nextIdx };
   }
+  // while cond:
+  if((m = code.match(/^while\s+(.+?)\s*:\s*$/))){
+    const cond = parseCond(m[1], 'python', line);
+    const body = parseBlockPy(lines, idx+1, ln.indent);
+    return { node:{ type:'while', cond, body:body.stmts, line }, nextIdx:body.nextIdx };
+  }
   // if cond:
   if((m = code.match(/^if\s+(.+?)\s*:\s*$/))){
     const cond = parseCond(m[1], 'python', line);
@@ -1206,6 +1189,15 @@ function parseBlockC(lines, idx){
     if((m = code.match(/^while\s*\(\s*(true|1)\s*\)\s*\{\s*$/))){
       const inner = parseBlockC(lines, idx+1);
       stmts.push({ type:'while', body:inner.stmts, line });
+      idx = inner.nextIdx;
+      continue;
+    }
+
+    // while (cond) {
+    if((m = code.match(/^while\s*\(\s*(.+?)\s*\)\s*\{\s*$/))){
+      const cond = parseCond(m[1], 'c', line);
+      const inner = parseBlockC(lines, idx+1);
+      stmts.push({ type:'while', cond, body:inner.stmts, line });
       idx = inner.nextIdx;
       continue;
     }
@@ -1501,6 +1493,7 @@ async function execStmt(stmt, rt, stateRef){
     case 'while': {
       let guard = 0;
       while(rt.running && !runAbort){
+        if(stmt.cond && !evalCond(stmt.cond, rt)) break;
         await execBlock(stmt.body, rt, stateRef);
         if(!rt.free && ++guard > 500){
           await runError('循环次数太多啦，看看是不是写错了？', stmt.line, rt);
@@ -1815,14 +1808,25 @@ function evalCond(cond, rt){
 }
 
 /* 自由模式：每走一步，已种作物生长一点 */
+function hasRiverNeighbor(rt, x, y){
+  const d = [[1,0],[-1,0],[0,1],[0,-1]];
+  for(const dd of d){
+    const nx = x + dd[0], ny = y + dd[1];
+    if(nx >= 0 && ny >= 0 && nx < rt.w && ny < rt.h && rt.grid[ny][nx].type === 'water') return true;
+  }
+  return false;
+}
+
 function tick(rt){
   if(rt.free){
     const w = freeState.weather;
-    for(const row of rt.grid) for(const cell of row){
+    for(let y=0; y<rt.grid.length; y++) for(let x=0; x<rt.grid[y].length; x++){
+      const cell = rt.grid[y][x];
       if(cell.type==='farm' && cell.crop==='planted'){
         let inc = 1;
         if(w === 'rain') inc = 2;
         if(w === 'drought' && !cell.watered) inc = 0;
+        if(hasRiverNeighbor(rt, x, y)) inc++;  // 河边灌溉加成：靠河的地长得更快
         cell.grow = (cell.grow||0) + inc;
         const need = (CROPS[cell.cropName] && CROPS[cell.cropName].grow) || 3;
         if(cell.grow >= need) cell.crop = 'ready';
@@ -1872,7 +1876,6 @@ async function runCode(){
   if(errors.length){
     if(debugMode) finishDebug();
     state.errorCount = (state.errorCount||0) + 1;
-    pushHistory(false, '😵 语法错误：' + errors[0].message);
     log('err', '😵 代码有问题，无法运行：');
     errors.forEach(e => {
       log('err', '  第 ' + e.line + ' 行：' + e.message);
@@ -1914,7 +1917,6 @@ async function runCode(){
   if(runAbort){ if(rt && rt.free) saveGame(); log('info','⏹ 已停止'); setRunningUI(false); return; }
   if(rt.finishReason === 'error'){
     state.errorCount = (state.errorCount||0) + 1;
-    pushHistory(false, '❌ ' + (rt.lastError || '运行错误'));
     await runErrorFinal(rt.lastError || '机器人卡住了');
     if(debugMode) finishDebug();
     return;
@@ -1923,10 +1925,8 @@ async function runCode(){
     setRunningUI(false);
     if(rt.finishReason === 'timeout'){
       log('warn', '⏱ 本次运行达到 ' + FREE_MAX_STEPS + ' 步上限，自动停止。可以优化脚本，或点「重置」继续');
-      pushHistory(false, '⏱ 达到 ' + FREE_MAX_STEPS + ' 步上限');
     } else {
       log('info', '✅ 脚本执行完毕！库存与金币已更新');
-      pushHistory(true, '✅ 自由模式运行完成');
     }
     checkBadges();
     updateFreeHUD();
@@ -1959,7 +1959,6 @@ async function runCode(){
     $('hudCoins').textContent = state.coins;
     saveGame();
     log('ok', '✅ 委托完成！用时 ' + check.steps + ' 步，代码 ' + lineCount + ' 行。获得 ' + coin + ' 金币！');
-    pushHistory(true, '✅ ' + check.steps + ' 步 / ' + lineCount + ' 行');
     beep('win');
     markGoalDone();
     await sleep(600);
@@ -1967,7 +1966,6 @@ async function runCode(){
     showResult(stars, check.steps, lineCount, LEVELS[state.levelIdx].optimalSteps, coin, newBest);
   } else {
     log('warn', '⚠ 机器人执行完了，但委托目标还没完成：' + check.reason);
-    pushHistory(false, '⚠ 目标未完成：' + check.reason);
     beep('fail');
     rt.finishReason='goalFail';
     markGoal();
@@ -2774,59 +2772,6 @@ function animateCount(id, target, ms){
   requestAnimationFrame(step);
 }
 
-/* ---------------- 运行历史 ---------------- */
-const HIST_KEY = 'codefarmHist';
-const HIST_LANG = { python:'🐍 Py', javascript:'🌐 JS', cpp:'⚙️ C++' };
-function pushHistory(ok, detail){
-  try{
-    const code = $('codeInput').value;
-    let hist = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
-    if(!Array.isArray(hist)) hist = [];
-    hist.unshift({ t: Date.now(), lang: state.lang, ok: !!ok, detail: detail || '', code });
-    if(hist.length > 60) hist.length = 60;
-    localStorage.setItem(HIST_KEY, JSON.stringify(hist));
-  }catch(e){}
-}
-function renderHist(){
-  const list = $('histList');
-  let hist = [];
-  try{ hist = JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); if(!Array.isArray(hist)) hist = []; }catch(e){}
-  if(!hist.length){
-    list.innerHTML = '<div class="hist-empty">还没有运行记录。每次运行代码都会自动保存到这里，点记录即可恢复。</div>';
-    return;
-  }
-  list.innerHTML = '';
-  hist.forEach(it => {
-    const d = new Date(it.t||Date.now());
-    const tm = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0') + ':' + String(d.getSeconds()).padStart(2,'0');
-    const div = document.createElement('div');
-    div.className = 'hist-item';
-    div.title = it.code;
-    const t = document.createElement('span'); t.className = 'hi-t'; t.textContent = tm;
-    const lg = document.createElement('span'); lg.className = 'hi-lang'; lg.textContent = HIST_LANG[it.lang] || it.lang || '?';
-    const st = document.createElement('span'); st.className = 'hi-st ' + (it.ok ? 'ok' : 'fail'); st.textContent = it.ok ? '✅' : '❌';
-    const dd = document.createElement('span'); dd.className = 'hi-d'; dd.textContent = it.detail || (it.code ? it.code.split('\n')[0] : '');
-    div.appendChild(t); div.appendChild(lg); div.appendChild(st); div.appendChild(dd);
-    div.onclick = () => { loadHist(it); };
-    list.appendChild(div);
-  });
-}
-function loadHist(it){
-  if(!it || !it.code) return;
-  $('codeInput').value = it.code;
-  if(it.lang && it.lang !== state.lang) switchLang(it.lang);
-  else syncEditor();
-  $('histModal').classList.add('hidden');
-  beep('click');
-}
-function clearHist(){
-  try{ localStorage.removeItem(HIST_KEY); }catch(e){}
-  renderHist();
-  beep('click');
-}
-function openHist(){ renderHist(); $('histModal').classList.remove('hidden'); }
-function closeHist(){ $('histModal').classList.add('hidden'); }
-
 function initSplitter(){
   const sp = document.getElementById('splitter');
   if(!sp) return;
@@ -3316,7 +3261,7 @@ function updateFreeHUD(){
   }
   $('freeHint').innerHTML = (window.innerWidth || document.documentElement.clientWidth) < 1000
     ? '💡 <span style="color:#61afef">water()</span>浇水 · 40步换天气 · 🌊/🐑挡路 · ✨传送 · 草地可开垦'
-    : '💡 提示：<span style="color:#61afef">water()</span> 可浇水；每 40 步天气轮换（🌧️ 生长翻倍 / 🌵 干旱停长）。解锁<span style="color:#c084fc">🪄 传送门</span>科技后：买门 → buildPortal(x, y) 放置 → pairPortal 配对 → 机器人走过门瞬移（坐标从 0 开始）。草地也能花钱开垦成农田（待开垦优先）。';
+    : '💡 提示：<span style="color:#61afef">water()</span> 可浇水；每 40 步天气轮换（🌧️ 生长翻倍 / 🌵 干旱停长）；<span style="color:#38bdf8">🌊 河边农田有灌溉加成 +1</span>（干旱天也能长）。解锁<span style="color:#c084fc">🪄 传送门</span>科技后：买门 → buildPortal(x, y) 放置 → pairPortal 配对 → 机器人走过门瞬移（坐标从 0 开始）。草地也能花钱开垦成农田（待开垦优先）。';
 }
 
 function buyUnlock(crop){
@@ -3743,9 +3688,6 @@ function init(){
   $('btnExClose').onclick = closeExample;
   $('btnStats').onclick = openStats;
   $('btnStatsClose').onclick = closeStats;
-  $('btnHist').onclick = openHist;
-  $('btnHistClose').onclick = closeHist;
-  $('btnHistClear').onclick = clearHist;
   initSplitter();
   $('btnBadgeClose').onclick = closeBadge;
   $('btnDebug').onclick = () => {
