@@ -1975,16 +1975,17 @@ function fitCanvas(){
   const h = Math.max(Math.round(w * 0.6), Math.round(tile * rt.h));   // 地图不扁：高度不小于宽的 60%
   canvas.style.width = w + "px";
   canvas.style.height = h + "px";
+  return { w, h };
 }
 function renderMap(){
-  fitCanvas();
+  const f = fitCanvas();
   LOGIC_H = Math.max(300, Math.round(CANVAS_W * Math.max(rt.h / rt.w, 0.6)));
   const dpr = window.devicePixelRatio || 1;
   const rw = canvas.getBoundingClientRect().width;
-  const zf = rw > 0 && canvas.clientWidth > 0 ? rw / canvas.clientWidth : 1;
-  const cw = Math.max(200, Math.round(canvas.clientWidth * zf * dpr));
-  const ch = Math.max(200, Math.round(canvas.clientHeight * zf * dpr));
-  if(canvas.width !== cw){ canvas.width = cw; canvas.height = ch; }
+  const zf = rw > 0 && f.w > 0 ? rw / f.w : 1;
+  const cw = Math.max(200, Math.round(f.w * zf * dpr));
+  const ch = Math.max(200, Math.round(f.h * zf * dpr));
+  if(canvas.width !== cw || canvas.height !== ch){ canvas.width = cw; canvas.height = ch; }
   const sc = cw / CANVAS_W;
   ctx.setTransform(sc,0,0,sc,0,0); tileSize();
   const ox = (CANVAS_W - rt.w*TILE)/2, oy = (LOGIC_H - rt.h*TILE)/2;
