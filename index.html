@@ -2141,7 +2141,14 @@ function cellRect(x,y){
 
 function fitCanvas(){
   const panel = canvas.parentElement;
-  const pw = Math.max(300, panel.clientWidth - 24), ph = Math.max(300, panel.clientHeight - 24);
+  const vh = window.innerHeight || document.documentElement.clientHeight || 800;
+  const mobile = (window.innerWidth || document.documentElement.clientWidth) < 1000;
+  // 桌面：面板真实高度（flex 拉伸到 main 全高，地图铺满、恢复改小前的大图）
+  // 手机：面板高度 + 视口兜底（42% 视口高，上限 560），防止面板塌陷导致地图缩成小图
+  const ph = mobile
+    ? Math.max(300, panel.clientHeight - 24, Math.min(560, vh * 0.42))
+    : Math.max(300, panel.clientHeight - 24);
+  const pw = Math.max(300, panel.clientWidth - 24);
   const tile = Math.min(pw / rt.w, ph / rt.h);
   const w = Math.max(260, Math.round(tile * rt.w));
   const h = Math.max(Math.round(w * 0.6), Math.round(tile * rt.h));   // 地图不扁：高度不小于宽的 60%
@@ -2197,7 +2204,7 @@ function renderMap(){
       if(M){ ctx.strokeStyle = 'rgba(74,222,128,.12)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(r.x+TILE*0.5, r.y+TILE*0.5, TILE*0.16, 0, Math.PI*2); ctx.stroke(); }
       // 小花点缀（稀疏小朵）与灌木（手机紧凑模式略去）
       const seed2 = (x*31 + y*17 + seed) % 10;
-      if(seed2 === 3 && !M){
+      if(seed2 === 3){
         const fx = r.x + 10 + (seed % (TILE-20)), fy = r.y + 10 + ((seed*3) % (TILE-20));
         const petals = ['rgba(248,240,190,.85)','rgba(240,180,220,.85)','rgba(190,230,255,.85)'][(x+y)%3];
         ctx.fillStyle = petals;
@@ -2263,8 +2270,8 @@ function renderMap(){
       ctx.beginPath(); ctx.arc(sx+6*k, sy-3*k, 6.5*k, 0, Math.PI*2); ctx.fill();
       ctx.beginPath(); ctx.arc(sx+0, sy+3*k, 6.5*k, 0, Math.PI*2); ctx.fill();
       ctx.beginPath(); ctx.arc(sx-4*k, sy+3*k, 5*k, 0, Math.PI*2); ctx.fill();
-      // 卷毛纹理点（手机紧凑模式略去）
-      if(!M){
+      // 卷毛纹理点
+      {
         ctx.fillStyle = 'rgba(196,190,184,.65)';
         ctx.beginPath(); ctx.arc(sx-5*k, sy-3*k, 1.5*k, 0, Math.PI*2); ctx.fill();
         ctx.beginPath(); ctx.arc(sx+1*k, sy-5*k, 1.5*k, 0, Math.PI*2); ctx.fill();
@@ -2284,9 +2291,8 @@ function renderMap(){
       ctx.fillStyle = '#111';
       ctx.beginPath(); ctx.arc(sx+11*k, sy-5.5*k, 0.65*k, 0, Math.PI*2); ctx.fill();
       ctx.beginPath(); ctx.arc(sx+15.5*k, sy-5.5*k, 0.65*k, 0, Math.PI*2); ctx.fill();
-      // 嘴前吃草（手机紧凑模式略去）
+      // 嘴前吃草
       ctx.fillStyle = '#a3e635';
-      if(M) return;
       ctx.beginPath(); ctx.ellipse(sx+17*k, sy+2*k, 3*k, 1.3*k, -.4, 0, Math.PI*2); ctx.fill();
       ctx.strokeStyle = '#65a30d'; ctx.lineWidth = 1.2*k;
       ctx.beginPath(); ctx.moveTo(sx+15*k, sy+3*k); ctx.lineTo(sx+13*k, sy+5*k); ctx.stroke();
@@ -2340,8 +2346,9 @@ function renderMap(){
       ctx.strokeStyle = 'rgba(250,204,21,.3)'; ctx.lineWidth = 1.5; ctx.setLineDash([4,4]);
       roundRect(r.x+8, r.y+8, TILE-16, TILE-16, 8); ctx.stroke(); ctx.setLineDash([]);
       ctx.fillStyle = 'rgba(250,204,21,.55)';
-      ctx.font = Math.max(8, Math.min(10, TILE*0.2)) + 'px sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText((TILE < 40 && (window.innerWidth || document.documentElement.clientWidth) < 1000) ? '垦' : '待开垦', cx, cy+4);
+      const shortLabel = (TILE < 24 && (window.innerWidth || document.documentElement.clientWidth) < 1000);
+      ctx.font = (shortLabel ? Math.max(6, Math.min(8, TILE*0.22)) : Math.max(9, Math.min(11, TILE*0.16))) + 'px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(shortLabel ? '垦' : '待开垦', cx, cy+4);
     } else if(cell.type==='shop'){
       const pulse = 0.5 + Math.sin(T*2.5)*0.2;
       ctx.fillStyle = '#4a3d10';
