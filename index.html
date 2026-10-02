@@ -108,7 +108,7 @@ main{ flex:1; display:flex; gap:0; min-height:0; }
   var(--bg);
   background-size:auto, auto, 190px 190px, 240px 240px, 220px 220px, auto; }
 #mapCanvas{ display:block; border-radius:14px; box-shadow:0 0 0 1px rgba(74,222,128,.12), 0 24px 70px rgba(0,0,0,.6), 0 0 60px rgba(74,222,128,.06); }
-.map-hint{ margin-top:14px; font-size:12px; color:var(--dim2); letter-spacing:1px; text-shadow:0 0 12px rgba(74,222,128,.25); }
+.map-hint{ position:absolute; left:0; right:0; bottom:6px; text-align:center; font-size:12px; color:var(--dim2); letter-spacing:1px; text-shadow:0 0 12px rgba(74,222,128,.25); pointer-events:none; }
 
 /* ============ 分隔条 ============ */
 #splitter{ flex:none; width:10px; cursor:col-resize; background:rgba(74,222,128,.09); border-left:1px solid rgba(74,222,128,.12); transition:background .2s; position:relative; z-index:5; user-select:none; touch-action:none; }
@@ -334,8 +334,8 @@ main{ flex:1; display:flex; gap:0; min-height:0; }
   .speed-btn{ min-height:34px; min-width:42px; }
   #consoleOut{ font-size:13px; }
   #tipModal .modal-box{ max-width:94vw; }
-  /* 顶栏换行压缩 */
-  header{ flex-wrap:wrap; gap:4px 8px; padding:6px 10px; }
+  /* 顶栏换行压缩：允许长高，按钮不被 main 覆盖 */
+  header{ flex-wrap:wrap; gap:4px 8px; padding:6px 10px; height:auto; min-height:52px; }
   header .spacer{ display:none; }
   .game-title{ font-size:15px; flex:none; }
   .chapter-badge{ font-size:10px; max-width:150px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:none; }
