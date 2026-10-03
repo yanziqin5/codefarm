@@ -131,6 +131,11 @@ main{ flex:1; display:flex; gap:0; min-height:0; }
 .goal-chip.fail{ border-color:var(--red); color:var(--red); }
 .opt-row{ margin-top:10px; font-size:12px; color:var(--dim2); }
 .opt-row b{ color:var(--cyan); }
+.sol-row{ margin-top:8px; }
+.sol-btn{ font-size:12px; padding:5px 12px; border-radius:8px; background:rgba(97,175,239,.12); color:var(--cyan); border:1px solid rgba(97,175,239,.35); cursor:pointer; }
+.sol-btn:disabled{ opacity:.45; cursor:not-allowed; background:rgba(92,99,112,.12); color:var(--dim2); border-color:var(--border); }
+.sol-code{ margin-top:8px; padding:10px 12px; border-radius:10px; background:#0d1520; border:1px solid var(--border); font-family:Consolas,Menlo,monospace; font-size:12.5px; line-height:1.6; white-space:pre; overflow-x:auto; color:#c8d3e5; }
+.sol-note{ margin-top:6px; font-size:11px; color:var(--dim2); }
 
 /* 自由模式面板 */
 #freePanel{ flex:none; padding:8px 20px 6px; border-bottom:1px solid var(--border); background:linear-gradient(180deg, rgba(250,204,21,.05), transparent); }
@@ -415,6 +420,7 @@ main{ flex:1; display:flex; gap:0; min-height:0; }
         <div class="story" id="lvStory"></div>
         <div class="goal-row" id="goalRow"></div>
         <div class="opt-row" id="optRow"></div>
+        <div class="sol-row" id="solRow"></div>
       </div>
 
       <!-- 自由模式面板 -->
@@ -958,13 +964,13 @@ const FREE_MAP = [
   '..HHHH.~~~.HHHH',
   '..HHHH.~~~.HHHH',
   '..HHHH.~~~KHHHH',
-  '..SSX.B...SS...',
+  '..S.X.B........',
   '...............',
   '...............'
 ];
 const CROP_PRICES = { '玉米':5, '萝卜':8, '番茄':15, '小麦':25, '草莓':40, '西瓜':80 };   // 卖出单价
 const CROP_UNLOCK = { '玉米':0, '萝卜':20, '番茄':60, '小麦':150, '草莓':300, '西瓜':600 }; // 解锁所需金币
-const SPRINKLER_COST = 200; // 自动洒水器科技：解锁后才能使用 water() 浇水 + 天气感知 is_drought()/is_rain()
+const SPRINKLER_COST = 200; // 洒水器科技：解锁后才能使用 water() 浇水 + 天气感知 is_drought()/is_rain()
 const PORTAL_COST = 400;     // 传送门科技（解锁后才能买传送门并放置/配对）
 const PORTAL_UNIT_COST = 200; // 单个传送门价格（buildPortal 放置时消耗 1 个）
 const LAND_COST = 30;   // 开垦一块土地
@@ -3260,6 +3266,26 @@ function renderMission(){
   }
   renderGoalChips(chips);
   $('optRow').innerHTML = '最优参考：<b>' + lv.optimalSteps + ' 步</b> / <b>' + lv.optimalLines + ' 行</b> —— 达成可得 ⭐⭐⭐';
+  renderSol();
+}
+
+function renderSol(){
+  const lv = LEVELS[state.levelIdx];
+  const sol = SOLUTIONS[lv.id-1];
+  const row = $('solRow');
+  if(!sol){ row.innerHTML = ''; return; }
+  const unlocked = !!state.best[lv.id];
+  const code = sol[state.lang] || sol.python;
+  row.innerHTML = '<button class="sol-btn" id="solBtn"' + (unlocked ? '' : ' disabled') + '>📖 参考答案' + (unlocked ? '' : '（通关后解锁）') + '</button>' +
+    '<pre class="sol-code hidden" id="solCode">' + highlight(code, state.lang) + '</pre>' +
+    '<div class="sol-note hidden" id="solNote">💡 ' + lv.tip.title + '。参考答案以教学思路为主，步数可以自己挑战更优。</div>';
+  const btn = $('solBtn');
+  btn.onclick = function(){
+    const codeEl = $('solCode'), note = $('solNote');
+    const open = codeEl.classList.toggle('hidden');
+    note.classList.toggle('hidden', !open);
+    btn.textContent = open ? '📖 收起答案' : '📖 参考答案';
+  };
 }
 
 function renderGoalChips(chips){
@@ -3292,6 +3318,12 @@ function switchLang(lang){
   }
   syncEditor();
   renderHelp();
+  // 参考答案展开时，同步切换语言版本
+  const solCode = $('solCode');
+  if(solCode && !solCode.classList.contains('hidden')){
+    const sol = SOLUTIONS[LEVELS[state.levelIdx].id-1];
+    if(sol) solCode.innerHTML = highlight(sol[lang] || sol.python, lang);
+  }
 }
 
 function renderHelp(){
@@ -3309,6 +3341,63 @@ function setRunningUI(running){
 }
 
 /* ---------------- 关卡流程 ---------------- */
+/* 参考答案（通关后解锁）：教学思路为主，步数可自行挑战更优 */
+const SOLUTIONS = [
+  { python:"move()\nmove()\nmove()\nplant(\"玉米\")",
+    javascript:"move();\nmove();\nmove();\nplant(\"玉米\");",
+    cpp:"move();\nmove();\nmove();\nplant(\"玉米\");" },
+  { python:"move()\nmove()\nmove()\nplant(\"玉米\")\nmove()\nplant(\"玉米\")\nmove()\nplant(\"玉米\")",
+    javascript:"move();\nmove();\nmove();\nplant(\"玉米\");\nmove();\nplant(\"玉米\");\nmove();\nplant(\"玉米\");",
+    cpp:"move();\nmove();\nmove();\nplant(\"玉米\");\nmove();\nplant(\"玉米\");\nmove();\nplant(\"玉米\");" },
+  { python:"move()\nmove()\nmove()\nharvest()\nmove()\nmove()\nmove()",
+    javascript:"move();\nmove();\nmove();\nharvest();\nmove();\nmove();\nmove();",
+    cpp:"move();\nmove();\nmove();\nharvest();\nmove();\nmove();\nmove();" },
+  { python:"for i in range(3):\n    move()\n    move()\n    plant(\"玉米\")",
+    javascript:"for (let i=0; i<3; i++) {\n    move();\n    move();\n    plant(\"玉米\");\n}",
+    cpp:"for (int i=0; i<3; i++) {\n    move();\n    move();\n    plant(\"玉米\");\n}" },
+  { python:"move()\nmove()\nmove()\nfor i in range(3):\n    harvest()\n    move()",
+    javascript:"move();\nmove();\nmove();\nfor (let i=0; i<3; i++) {\n    harvest();\n    move();\n}",
+    cpp:"move();\nmove();\nmove();\nfor (int i=0; i<3; i++) {\n    harvest();\n    move();\n}" },
+  { python:"for i in range(3):\n    move()\n    move()\n    plant(\"玉米\")\nmove()\nmove()",
+    javascript:"for (let i=0; i<3; i++) {\n    move();\n    move();\n    plant(\"玉米\");\n}\nmove();\nmove();",
+    cpp:"for (int i=0; i<3; i++) {\n    move();\n    move();\n    plant(\"玉米\");\n}\nmove();\nmove();" },
+  { python:"if can_move():\n    move()\nelse:\n    turn_right()\n    move()\n    turn_left()\nif can_move():\n    move()\nelse:\n    turn_right()\n    move()\n    turn_left()\nif can_move():\n    move()\nelse:\n    turn_right()\n    move()\n    turn_left()\nif can_move():\n    move()",
+    javascript:"if (canMove()) {\n    move();\n} else {\n    turnRight();\n    move();\n    turnLeft();\n}\nif (canMove()) {\n    move();\n} else {\n    turnRight();\n    move();\n    turnLeft();\n}\nif (canMove()) {\n    move();\n} else {\n    turnRight();\n    move();\n    turnLeft();\n}\nif (canMove()) {\n    move();\n}",
+    cpp:"if (canMove()) {\n    move();\n} else {\n    turnRight();\n    move();\n    turnLeft();\n}\nif (canMove()) {\n    move();\n} else {\n    turnRight();\n    move();\n    turnLeft();\n}\nif (canMove()) {\n    move();\n} else {\n    turnRight();\n    move();\n    turnLeft();\n}\nif (canMove()) {\n    move();\n}" },
+  { python:"move()\nmove()\nif is_ready():\n    harvest()\nmove()\nmove()\nif is_ready():\n    harvest()",
+    javascript:"move();\nmove();\nif (isReady()) {\n    harvest();\n}\nmove();\nmove();\nif (isReady()) {\n    harvest();\n}",
+    cpp:"move();\nmove();\nif (isReady()) {\n    harvest();\n}\nmove();\nmove();\nif (isReady()) {\n    harvest();\n}" },
+  { python:"move()\nmove()\nif is_ready():\n    harvest()\nmove()\nif is_ready():\n    harvest()\nturn_right()\nmove()\nturn_left()\nmove()\nmove()\nmove()\nturn_left()\nmove()",
+    javascript:"move();\nmove();\nif (isReady()) {\n    harvest();\n}\nmove();\nif (isReady()) {\n    harvest();\n}\nturnRight();\nmove();\nturnLeft();\nmove();\nmove();\nmove();\nturnLeft();\nmove();",
+    cpp:"move();\nmove();\nif (isReady()) {\n    harvest();\n}\nmove();\nif (isReady()) {\n    harvest();\n}\nturnRight();\nmove();\nturnLeft();\nmove();\nmove();\nmove();\nturnLeft();\nmove();" },
+  { python:"def 种田():\n    move()\n    move()\n    plant(\"玉米\")\n种田()\nmove()",
+    javascript:"function 种田() {\n    move();\n    move();\n    plant(\"玉米\");\n}\n种田();\nmove();",
+    cpp:"void 种田() {\n    move();\n    move();\n    plant(\"玉米\");\n}\n种田();\nmove();" },
+  { python:"def 种田():\n    move()\n    plant(\"玉米\")\n种田()\n种田()\n种田()\nmove()",
+    javascript:"function 种田() {\n    move();\n    plant(\"玉米\");\n}\n种田();\n种田();\n种田();\nmove();",
+    cpp:"void 种田() {\n    move();\n    plant(\"玉米\");\n}\n种田();\n种田();\n种田();\nmove();" },
+  { python:"def 种田():\n    move()\n    plant(\"玉米\")\nfor i in range(4):\n    种田()\nmove()",
+    javascript:"function 种田() {\n    move();\n    plant(\"玉米\");\n}\nfor (let i=0; i<4; i++) {\n    种田();\n}\nmove();",
+    cpp:"void 种田() {\n    move();\n    plant(\"玉米\");\n}\nfor (int i=0; i<4; i++) {\n    种田();\n}\nmove();" },
+  { python:"crops = [\"玉米\", \"萝卜\", \"番茄\"]\nfor i in range(3):\n    move()\n    move()\n    plant(crops[i])",
+    javascript:"let crops = [\"玉米\", \"萝卜\", \"番茄\"];\nfor (let i=0; i<3; i++) {\n    move();\n    move();\n    plant(crops[i]);\n}",
+    cpp:"string crops[] = {\"玉米\", \"萝卜\", \"番茄\"};\nfor (int i=0; i<3; i++) {\n    move();\n    move();\n    plant(crops[i]);\n}" },
+  { python:"crops = [\"玉米\", \"玉米\", \"番茄\", \"萝卜\"]\nfor i in range(4):\n    move()\n    move()\n    plant(crops[i])",
+    javascript:"let crops = [\"玉米\", \"玉米\", \"番茄\", \"萝卜\"];\nfor (let i=0; i<4; i++) {\n    move();\n    move();\n    plant(crops[i]);\n}",
+    cpp:"string crops[] = {\"玉米\", \"玉米\", \"番茄\", \"萝卜\"};\nfor (int i=0; i<4; i++) {\n    move();\n    move();\n    plant(crops[i]);\n}" },
+  { python:"crops = [\"玉米\", \"玉米\", \"萝卜\", \"番茄\"]\nfor i in range(4):\n    move()\n    move()\n    if crops[i] != \"萝卜\":\n        plant(crops[i])",
+    javascript:"let crops = [\"玉米\", \"玉米\", \"萝卜\", \"番茄\"];\nfor (let i=0; i<4; i++) {\n    move();\n    move();\n    if (crops[i] != \"萝卜\") {\n        plant(crops[i]);\n    }\n}",
+    cpp:"string crops[] = {\"玉米\", \"玉米\", \"萝卜\", \"番茄\"};\nfor (int i=0; i<4; i++) {\n    move();\n    move();\n    if (crops[i] != \"萝卜\") {\n        plant(crops[i]);\n    }\n}" },
+  { python:"while can_move():\n    move()\n    if can_plant():\n        plant(\"玉米\")",
+    javascript:"while (canMove()) {\n    move();\n    if (canPlant()) {\n        plant(\"玉米\");\n    }\n}",
+    cpp:"while (canMove()) {\n    move();\n    if (canPlant()) {\n        plant(\"玉米\");\n    }\n}" },
+  { python:"while can_move():\n    move()\n    if is_drought() and can_plant():\n        plant(\"玉米\")",
+    javascript:"while (canMove()) {\n    move();\n    if (isDrought() && canPlant()) {\n        plant(\"玉米\");\n    }\n}",
+    cpp:"while (canMove()) {\n    move();\n    if (isDrought() && canPlant()) {\n        plant(\"玉米\");\n    }\n}" },
+  { python:"def 巡田():\n    while can_move():\n        move()\n        if is_ready():\n            harvest()\n        else:\n            if can_plant():\n                plant(\"玉米\")\n巡田()",
+    javascript:"function 巡田() {\n    while (canMove()) {\n        move();\n        if (isReady()) {\n            harvest();\n        } else {\n            if (canPlant()) {\n                plant(\"玉米\");\n            }\n        }\n    }\n}\n巡田();",
+    cpp:"void 巡田() {\n    while (canMove()) {\n        move();\n        if (isReady()) {\n            harvest();\n        } else {\n            if (canPlant()) {\n                plant(\"玉米\");\n            }\n        }\n    }\n}\n巡田();" }
+];
 /* ---------------- 自由模式 ---------------- */
 const FREE_TEMPLATE = {
   python: '# 自由农场 · 用代码实现自动化' + '\n' + '# 示例：向前走两步，种下玉米' + '\n' + 'move()' + '\n' + 'move()' + '\n' + 'plant("玉米")' + '\n' + '# 提示：作物种下后每走一步长一点，成熟后 harvest()' + '\n' + '# 进阶：解锁传送门科技后：买门 → buildPortal 放置 → pairPortal 配对 → 走过门传送' + '\n' + '# 进阶：用 while True: 写自动巡田脚本',
