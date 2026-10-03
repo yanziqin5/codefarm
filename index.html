@@ -654,8 +654,7 @@ const LANGS = {
       can_plant:'canPlant();',
       water:'water();',
       build_portal:'buildPortal(5, 6);',
-      pair_portal:'pairPortal(1, 1, 8, 4);',
-      can_plant:'canPlant();'
+      pair_portal:'pairPortal(1, 1, 8, 4);'
     },
     help:`<b style="color:var(--text)">可用的农场指令（JavaScript 语法）</b><br>
       <span style="color:#61afef">move();</span> — 向前走一格<br>
@@ -666,8 +665,6 @@ const LANGS = {
       <span style="color:#61afef">console.log("内容");</span> — 在控制台输出内容<br>
       <span style="color:#61afef">canMove();</span> — 判断前方能否走（用于 if）<br>
       <span style="color:#61afef">isReady();</span> — 判断当前格能否收获（用于 if）<br>
-      <span style="color:#61afef">canPlant();</span> — 判断当前格是不是空地农田、能否种（用于 if）<br>
-      <span style="color:#61afef">water();</span> — 给当前格正在生长的作物浇水 +2 成长（自由模式，干旱天救急）<br>
       <span style="color:#61afef">canPlant();</span> — 判断当前格是不是空地农田、能否种（用于 if）<br>
       <span style="color:#61afef">water();</span> — 给当前格正在生长的作物浇水 +2 成长（自由模式，干旱天救急）<br>
       <span style="color:#61afef">buildPortal(x, y);</span> — 消耗 1 个传送门，在 (x, y) 放置（只能放草地/贫瘠地；先在右侧面板买传送门）<br>
@@ -691,8 +688,7 @@ const LANGS = {
       can_plant:'canPlant();',
       water:'water();',
       build_portal:'buildPortal(5, 6);',
-      pair_portal:'pairPortal(1, 1, 8, 4);',
-      can_plant:'canPlant();'
+      pair_portal:'pairPortal(1, 1, 8, 4);'
     },
     help:`<b style="color:var(--text)">可用的农场指令（C++ 语法）</b><br>
       <span style="color:#61afef">move();</span> — 向前走一格<br>
@@ -703,8 +699,6 @@ const LANGS = {
       <span style="color:#61afef">print("内容");</span> — 在控制台输出内容<br>
       <span style="color:#61afef">canMove();</span> — 判断前方能否走（用于 if）<br>
       <span style="color:#61afef">isReady();</span> — 判断当前格能否收获（用于 if）<br>
-      <span style="color:#61afef">canPlant();</span> — 判断当前格是不是空地农田、能否种（用于 if）<br>
-      <span style="color:#61afef">water();</span> — 给当前格正在生长的作物浇水 +2 成长（自由模式，干旱天救急）<br>
       <span style="color:#61afef">canPlant();</span> — 判断当前格是不是空地农田、能否种（用于 if）<br>
       <span style="color:#61afef">water();</span> — 给当前格正在生长的作物浇水 +2 成长（自由模式，干旱天救急）<br>
       <span style="color:#61afef">buildPortal(x, y);</span> — 消耗 1 个传送门，在 (x, y) 放置（只能放草地/贫瘠地；先在右侧面板买传送门）<br>
@@ -1064,7 +1058,7 @@ function parseMap(rows){
  * 支持三语言的教学子集：
  *   - 函数调用：move() turnLeft() plant("玉米") harvest() print(...) console.log(...)
  *   - for 循环：Python for i in range(n):   /   JS/C++ for (let i=0; i<n; i++) {
- *   - if 条件：Python if can_move():   /   JS/C++ if (canMove()) {   （不支持 else）
+ *   - if 条件：Python if can_move():   /   JS/C++ if (canMove()) {   （支持 else：JS/C++ 可写 } else { 或分两行）
  *   - 函数定义：Python def 名():   /   JS/C++ void 名() {
  */
 
@@ -1181,6 +1175,10 @@ function parseBlockC(lines, idx){
     const code = ln.code, line = ln.src;
     let m;
 
+    if(/^\}\s*else\s*\{\s*$/.test(code)){
+      idx++;
+      return { stmts, nextIdx:idx, elseFlag:true };
+    }
     if(code === '}' ){ idx++; break; }
 
     // while (true) {
@@ -1213,10 +1211,16 @@ function parseBlockC(lines, idx){
       const cond = parseCond(m[1], 'c', line);
       const inner = parseBlockC(lines, idx+1);
       let elseBody = null, nextIdx = inner.nextIdx;
-      const nxt = lines[nextIdx];
-      if(nxt && nxt.type==='code' && /^else\s*\{?\s*$/.test(nxt.code)){
-        const eb = parseBlockC(lines, nextIdx+1);
+      if(inner.elseFlag){
+        // 单行写法：} else {
+        const eb = parseBlockC(lines, inner.nextIdx);
         elseBody = eb.stmts; nextIdx = eb.nextIdx;
+      } else {
+        const nxt = lines[nextIdx];
+        if(nxt && nxt.type==='code' && /^else\s*\{?\s*$/.test(nxt.code)){
+          const eb = parseBlockC(lines, nextIdx+1);
+          elseBody = eb.stmts; nextIdx = eb.nextIdx;
+        }
       }
       stmts.push({ type:'if', cond, body:inner.stmts, elseBody, line });
       idx = nextIdx;
@@ -1227,7 +1231,7 @@ function parseBlockC(lines, idx){
       stmts.push({ type:'assign', name:m[1], expr:m[2].trim(), line });
       idx++; continue;
     }
-    if(/^\}\s*else/.test(code)){ throw { message:'把 "} else {" 分开写两行：先写 }，下一行写 else {', line }; }
+    if(/^\}\s*else/.test(code)){ throw { message:'else 这行只能写 } else {（前面必须有 if，且 } 和 else 挨着写）', line }; }
     // void name() {  /  function name() {
     if((m = code.match(/^(?:void|function)\s+([a-zA-Z_\u4e00-\u9fa5][\w\u4e00-\u9fa5]*)\s*\(\s*\)\s*\{\s*$/))){
       const inner = parseBlockC(lines, idx+1);
@@ -2891,7 +2895,7 @@ C++:     for (int i=0; i<3; i++) {
 【条件判断】
 Python:  if can_move():
 JS/C++:  if (canMove()) {
-（else 同理，JS/C++ 的 } else { 要分开两行写）
+（else 同理，JS/C++ 可以写 } else { 一行，或把 } 和 else { 分两行写）
 
 【自定义函数】
 Python:  def 收菜():
@@ -2905,7 +2909,7 @@ JS:      let crops = ["玉米", "萝卜"];
 C++:     string crops[] = {"玉米", "萝卜"};
 按下标取：crops[0] 是第一个（下标从 0 开始）
 长度：Python len(crops) / JS crops.length / C++ sizeof(crops)/sizeof(crops[0])` },
-  { title:'💡 常见套路', code:
+  { title:'💡 常见套路（下方为 Python 写法；JS/C++ 把 can_move→canMove、turn_left→turnLeft、turn_right→turnRight，并加 ; 结尾）', code:
 `【种一排菜】走到地里一排排种：
 for i in range(3):
     move()
@@ -3336,16 +3340,16 @@ const EXAMPLES = [
     cpp:"void 种田() {\n    move();\n    plant(\"玉米\");\n}\n种田();\nmove();" },
   { id:'while', title:'while · 走到不能走为止', desc:'while 会一直重复，直到条件变假——适合不知道要走多少步的场景。',
     python:"while can_move():\n    move()",
-    javascript:"while (can_move()) {\n    move();\n}",
-    cpp:"while (can_move()) {\n    move();\n}" },
+    javascript:"while (canMove()) {\n    move();\n}",
+    cpp:"while (canMove()) {\n    move();\n}" },
   { id:'farm', title:'自由农场 · 种 → 等 → 收', desc:'自由模式小脚本：走到农田种玉米，原地等它成熟（转弯也算步数），再收获。',
     python:"move()\nmove()\nplant(\"玉米\")\nfor i in range(4):\n    turn_left()\n    turn_right()\nharvest()",
-    javascript:"move();\nmove();\nplant(\"玉米\");\nfor (let i=0; i<4; i++) {\n    turn_left();\n    turn_right();\n}\nharvest();",
-    cpp:"move();\nmove();\nplant(\"玉米\");\nfor (int i=0; i<4; i++) {\n    turn_left();\n    turn_right();\n}\nharvest();" },
+    javascript:"move();\nmove();\nplant(\"玉米\");\nfor (let i=0; i<4; i++) {\n    turnLeft();\n    turnRight();\n}\nharvest();",
+    cpp:"move();\nmove();\nplant(\"玉米\");\nfor (int i=0; i<4; i++) {\n    turnLeft();\n    turnRight();\n}\nharvest();" },
   { id:'sell', title:'自由农场 · 走到商店卖货', desc:'卖货要去金色💰商店：右 2 步、转向、下 5 步就到西侧商店，sell() 清空库存换金币。',
     python:"for i in range(2):\n    move()\nturn_right()\nfor i in range(5):\n    move()\nsell()",
-    javascript:"for (let i=0; i<2; i++) {\n    move();\n}\nturn_right();\nfor (let i=0; i<5; i++) {\n    move();\n}\nsell();",
-    cpp:"for (int i=0; i<2; i++) {\n    move();\n}\nturn_right();\nfor (int i=0; i<5; i++) {\n    move();\n}\nsell();" }
+    javascript:"for (let i=0; i<2; i++) {\n    move();\n}\nturnRight();\nfor (let i=0; i<5; i++) {\n    move();\n}\nsell();",
+    cpp:"for (int i=0; i<2; i++) {\n    move();\n}\nturnRight();\nfor (int i=0; i<5; i++) {\n    move();\n}\nsell();" }
 ];
 const SKINS = [
   { id:'default', name:'小农机器人', icon:'🤖', body0:'#60a5fa', body1:'#2563eb', arm:'#1d4ed8', armHi:'#93c5fd', screen:'#0d1830', scan:'96,165,250',
