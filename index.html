@@ -175,7 +175,7 @@ main{ flex:1; display:flex; gap:0; min-height:0; }
 #hlLayer{
   position:absolute; inset:0; margin:0; padding:12px 14px; overflow:hidden;
   font-family:Consolas,"Courier New",monospace; font-size:14px; line-height:24px;
-  white-space:pre; color:var(--text); pointer-events:none; word-break:normal;
+  white-space:pre-wrap; word-break:break-all; color:var(--text); pointer-events:none;
 }
 #hlLayer .cur-line{ background:rgba(74,222,128,.10); box-shadow:-14px 0 0 rgba(74,222,128,.10), 14px 0 0 rgba(74,222,128,.10); border-radius:2px; }
 #hlLayer .err-line{ background:rgba(248,113,113,.10); box-shadow:-14px 0 0 rgba(248,113,113,.10), 14px 0 0 rgba(248,113,113,.10); }
@@ -183,7 +183,7 @@ main{ flex:1; display:flex; gap:0; min-height:0; }
   position:absolute; inset:0; width:100%; height:100%; resize:none; border:none; outline:none;
   background:transparent; color:transparent; caret-color:#e6edf3;
   font-family:Consolas,"Courier New",monospace; font-size:14px; line-height:24px;
-  padding:12px 14px; white-space:pre; overflow:auto; tab-size:4;
+  padding:12px 14px; white-space:pre-wrap; word-break:break-all; overflow:auto; tab-size:4;
 }
 #codeInput::selection{ background:rgba(96,165,250,.25); }
 #hlLayer .hl-k{ color:#c678dd; font-weight:600; }
@@ -619,20 +619,24 @@ const LANGS = {
       is_ready:'is_ready()',
       can_plant:'can_plant()',
       water:'water()',
+      is_drought:'is_drought()',
+      is_rain:'is_rain()',
       build_portal:'buildPortal(5, 6)',
       pair_portal:'pairPortal(1, 1, 8, 4)'
     },
     help:`<b style="color:var(--text)">可用的农场指令（Python 语法）</b><br>
       <span style="color:#61afef">move()</span> — 向前走一格<br>
       <span style="color:#61afef">turn_left()</span> / <span style="color:#61afef">turn_right()</span> — 左转 / 右转 90°<br>
-      <span style="color:#61afef">plant("作物名")</span> — 在当前格种下作物（玉米/萝卜/番茄/小麦）<br>
+      <span style="color:#61afef">plant("作物名")</span> — 在当前格种下作物（玉米/萝卜/番茄/小麦/草莓/西瓜）<br>
       <span style="color:#61afef">harvest()</span> — 收获当前格已成熟的作物<br>
       <span style="color:#61afef">sell()</span> — 在商店格卖出所有库存作物（自由模式）<br>
       <span style="color:#61afef">print("内容")</span> — 在控制台输出内容<br>
       <span style="color:#61afef">can_move()</span> — 判断前方能否走（用于 if）<br>
       <span style="color:#61afef">is_ready()</span> — 判断当前格能否收获（用于 if）<br>
       <span style="color:#61afef">can_plant()</span> — 判断当前格是不是空地农田、能否种（用于 if）<br>
-      <span style="color:#61afef">water()</span> — 给当前格正在生长的作物浇水 +2 成长（自由模式，干旱天救急）<br>
+      <span style="color:#61afef">water()</span> — 给当前格正在生长的作物浇水 +2 成长（需先解锁「洒水器」科技 🪙' + SPRINKLER_COST + '；干旱天救急）<br>
+      <span style="color:#61afef">is_drought()</span> — 现在是干旱天吗（作物停长）？（用于 if）<br>
+      <span style="color:#61afef">is_rain()</span> — 现在是下雨天吗（生长翻倍）？（用于 if）<br>
       <span style="color:#61afef">buildPortal(x, y)</span> — 消耗 1 个传送门，在 (x, y) 放置（只能放草地/贫瘠地；先在右侧面板买传送门）<br>
       <span style="color:#61afef">pairPortal(x1, y1, x2, y2)</span> — 把两扇自己放置的门配对，机器人走到任意一扇会瞬移到另一扇（坐标从 0 开始）<br><br>
       <span style="color:var(--dim2)">· 行尾不需要分号，缩进用 4 个空格<br>· 每行写一条指令，从上到下依次执行<br>· <span style="color:#c678dd"># 开头</span>是注释，机器人会跳过<br>· <span style="color:#c678dd">while True:</span> 可以写无限循环（自由模式自动农场）</span>`
@@ -653,20 +657,24 @@ const LANGS = {
       is_ready:'isReady();',
       can_plant:'canPlant();',
       water:'water();',
+      is_drought:'isDrought();',
+      is_rain:'isRain();',
       build_portal:'buildPortal(5, 6);',
       pair_portal:'pairPortal(1, 1, 8, 4);'
     },
     help:`<b style="color:var(--text)">可用的农场指令（JavaScript 语法）</b><br>
       <span style="color:#61afef">move();</span> — 向前走一格<br>
       <span style="color:#61afef">turnLeft();</span> / <span style="color:#61afef">turnRight();</span> — 左转 / 右转 90°<br>
-      <span style="color:#61afef">plant("作物名");</span> — 在当前格种下作物（玉米/萝卜/番茄/小麦）<br>
+      <span style="color:#61afef">plant("作物名");</span> — 在当前格种下作物（玉米/萝卜/番茄/小麦/草莓/西瓜）<br>
       <span style="color:#61afef">harvest();</span> — 收获当前格已成熟的作物<br>
       <span style="color:#61afef">sell();</span> — 在商店格卖出所有库存作物（自由模式）<br>
       <span style="color:#61afef">console.log("内容");</span> — 在控制台输出内容<br>
       <span style="color:#61afef">canMove();</span> — 判断前方能否走（用于 if）<br>
       <span style="color:#61afef">isReady();</span> — 判断当前格能否收获（用于 if）<br>
       <span style="color:#61afef">canPlant();</span> — 判断当前格是不是空地农田、能否种（用于 if）<br>
-      <span style="color:#61afef">water();</span> — 给当前格正在生长的作物浇水 +2 成长（自由模式，干旱天救急）<br>
+      <span style="color:#61afef">water();</span> — 给当前格正在生长的作物浇水 +2 成长（需先解锁「洒水器」科技 🪙' + SPRINKLER_COST + '；干旱天救急）<br>
+      <span style="color:#61afef">isDrought();</span> — 现在是干旱天吗（作物停长）？（用于 if）<br>
+      <span style="color:#61afef">isRain();</span> — 现在是下雨天吗（生长翻倍）？（用于 if）<br>
       <span style="color:#61afef">buildPortal(x, y);</span> — 消耗 1 个传送门，在 (x, y) 放置（只能放草地/贫瘠地；先在右侧面板买传送门）<br>
       <span style="color:#61afef">pairPortal(x1, y1, x2, y2);</span> — 把两扇自己放置的门配对，机器人走到任意一扇会瞬移到另一扇（坐标从 0 开始）<br><br>
       <span style="color:var(--dim2)">· 每条指令以分号 ; 结尾<br>· 每行写一条指令，从上到下依次执行<br>· <span style="color:#5c6370">// 开头</span>是注释，机器人会跳过<br>· <span style="color:#c678dd">while (true) { }</span> 可以写无限循环（自由模式自动农场）</span>`
@@ -687,20 +695,24 @@ const LANGS = {
       is_ready:'isReady();',
       can_plant:'canPlant();',
       water:'water();',
+      is_drought:'isDrought();',
+      is_rain:'isRain();',
       build_portal:'buildPortal(5, 6);',
       pair_portal:'pairPortal(1, 1, 8, 4);'
     },
     help:`<b style="color:var(--text)">可用的农场指令（C++ 语法）</b><br>
       <span style="color:#61afef">move();</span> — 向前走一格<br>
       <span style="color:#61afef">turnLeft();</span> / <span style="color:#61afef">turnRight();</span> — 左转 / 右转 90°<br>
-      <span style="color:#61afef">plant("作物名");</span> — 在当前格种下作物（玉米/萝卜/番茄/小麦）<br>
+      <span style="color:#61afef">plant("作物名");</span> — 在当前格种下作物（玉米/萝卜/番茄/小麦/草莓/西瓜）<br>
       <span style="color:#61afef">harvest();</span> — 收获当前格已成熟的作物<br>
       <span style="color:#61afef">sell();</span> — 在商店格卖出所有库存作物（自由模式）<br>
       <span style="color:#61afef">print("内容");</span> — 在控制台输出内容<br>
       <span style="color:#61afef">canMove();</span> — 判断前方能否走（用于 if）<br>
       <span style="color:#61afef">isReady();</span> — 判断当前格能否收获（用于 if）<br>
       <span style="color:#61afef">canPlant();</span> — 判断当前格是不是空地农田、能否种（用于 if）<br>
-      <span style="color:#61afef">water();</span> — 给当前格正在生长的作物浇水 +2 成长（自由模式，干旱天救急）<br>
+      <span style="color:#61afef">water();</span> — 给当前格正在生长的作物浇水 +2 成长（需先解锁「洒水器」科技 🪙' + SPRINKLER_COST + '；干旱天救急）<br>
+      <span style="color:#61afef">isDrought();</span> — 现在是干旱天吗（作物停长）？（用于 if）<br>
+      <span style="color:#61afef">isRain();</span> — 现在是下雨天吗（生长翻倍）？（用于 if）<br>
       <span style="color:#61afef">buildPortal(x, y);</span> — 消耗 1 个传送门，在 (x, y) 放置（只能放草地/贫瘠地；先在右侧面板买传送门）<br>
       <span style="color:#61afef">pairPortal(x1, y1, x2, y2);</span> — 把两扇自己放置的门配对，机器人走到任意一扇会瞬移到另一扇（坐标从 0 开始）<br><br>
       <span style="color:var(--dim2)">· 每条指令以分号 ; 结尾<br>· 每行写一条指令，从上到下依次执行<br>· <span style="color:#5c6370">// 开头</span>是注释，机器人会跳过<br>· <span style="color:#c678dd">while (true) { }</span> 可以写无限循环（自由模式自动农场）</span>`
@@ -797,7 +809,7 @@ const LEVELS = [
   },
   {
     id:8, name:'熟了就收', chapter:3, chapterName:'条件判断',
-    story:'玉米熟了三棵，但中间那棵还青着（小苗），不能收！让机器人自己判断：走到农田时，成熟了才收。',
+    story:'玉米种了三棵，但中间那棵还青着（小苗），不能收！让机器人自己判断：走到农田时，成熟了才收。',
     goal:{ type:'harvest', need:2 },
     map:[
       'R.CUC.',
@@ -809,10 +821,10 @@ const LEVELS = [
   },
   {
     id:9, name:'条件大师', chapter:3, chapterName:'条件判断',
-    story:'老周的最后考验：绕开石头、只收熟玉米，最后开到仓库。一个代码里要判断两次——试试把 if 放进 if 里（嵌套）。',
+    story:'石头挡路、熟玉米要收、仓库要开——三种情况凑到一起。一个代码里要判断两次，试试把 if 放进 if 里（嵌套）。',
     goal:{ type:'both', plantNeed:0, harvestNeed:2, reach:true },
     map:[
-      'R.CC.XG',
+      'R.CC.XG.',
       '........',
       '........'
     ],
@@ -842,7 +854,7 @@ const LEVELS = [
     tip:{ title:'复用：写一次，用 N 次', body:'把「走一步 + 种一棵」打包成函数，种几块田就调用几次：<br><br><b style="color:#61afef">Python</b><br><span style="color:#c678dd">def 种一块():</span><br>&nbsp;&nbsp;&nbsp;&nbsp;move()<br>&nbsp;&nbsp;&nbsp;&nbsp;plant("玉米")<br><span style="color:#c678dd">种一块()</span><br><span style="color:#c678dd">种一块()</span><br><span style="color:#c678dd">种一块()</span><br>move()<br><br><b style="color:var(--green)">如果以后要种 100 块田呢？</b>直接写要 200 行，函数版只多一行调用。<br><br>函数让代码：1️⃣ 更短 2️⃣ 更好读（名字说明用途）3️⃣ 改一处全变（比如把玉米换成萝卜，只改函数体）。' }
   },
   { id:12, name:'函数大师', chapter:4, chapterName:'函数',
-    story:'终极考验：函数 + 循环组合拳——函数里放一个 for 循环，一次调用干完一整排！',
+    story:'函数 + 循环组合拳——函数里放一个 for 循环，一次调用干完一整排玉米！',
     goal:{ type:'both', crop:'玉米', plantNeed:4, harvestNeed:0, reach:true },
     map:[
       'RFFFFG',
@@ -850,7 +862,7 @@ const LEVELS = [
       '......'
     ],
     optimalSteps:9, optimalLines:7,
-    tip:{ title:'函数 + 循环：终极组合', body:'函数里可以放循环！这个函数一次调用就种完整排：<br><br><b style="color:#61afef">Python</b><br><span style="color:#c678dd">def 种一排():</span><br>&nbsp;&nbsp;&nbsp;&nbsp;for i in range(4):<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;move()<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;plant("玉米")<br><span style="color:#c678dd">种一排()</span><br>move()<br><br><b style="color:#61afef">JavaScript</b><br><span style="color:#c678dd">function 种一排() {</span><br>&nbsp;&nbsp;&nbsp;&nbsp;for (let i=0; i<4; i++) {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;move();<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;plant("玉米");<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br><span style="color:#c678dd">}</span><br><span style="color:#c678dd">种一排();</span><br><br><b style="color:var(--green)">函数负责「做什么」，循环负责「做几遍」</b>——两个大招合体，代码短得可怕。' }
+    tip:{ title:'函数 + 循环：组合拳', body:'函数里可以放循环！这个函数一次调用就种完整排：<br><br><b style="color:#61afef">Python</b><br><span style="color:#c678dd">def 种一排():</span><br>&nbsp;&nbsp;&nbsp;&nbsp;for i in range(4):<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;move()<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;plant("玉米")<br><span style="color:#c678dd">种一排()</span><br>move()<br><br><b style="color:#61afef">JavaScript</b><br><span style="color:#c678dd">function 种一排() {</span><br>&nbsp;&nbsp;&nbsp;&nbsp;for (let i=0; i<4; i++) {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;move();<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;plant("玉米");<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br><span style="color:#c678dd">}</span><br><span style="color:#c678dd">种一排();</span><br><br><b style="color:var(--green)">函数负责「做什么」，循环负责「做几遍」</b>——两个大招合体，代码短得可怕。' }
   },
   {
     id:13, name:'作物清单', chapter:5, chapterName:'数组 · 列表',
@@ -892,6 +904,46 @@ const LEVELS = [
     ],
     optimalSteps:12, optimalLines:5,
     tip:{ title:'数组 + 条件：筛选清单', body:'遍历清单时可以用 if 挑出要处理的：<br><br><b style="color:#61afef">Python</b><br><span style="color:#c678dd">for i in range(4):</span><br>&nbsp;&nbsp;&nbsp;&nbsp;move()<br>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#c678dd">if crops[i] != "萝卜":</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;plant(crops[i])<br><br><b style="color:#61afef">JavaScript / C++</b><br><span style="color:#c678dd">for (let i=0; i<4; i++) {</span><br>&nbsp;&nbsp;&nbsp;&nbsp;move();<br>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#c678dd">if (crops[i] != "萝卜") {</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;plant(crops[i]);<br>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#c678dd">}</span><br><span style="color:#c678dd">}</span><br><br><b style="color:var(--green)">crops[i] != "萝卜"</b> 的意思是"清单里这一项不是萝卜"。把条件写进循环，就能对每一件数据做筛选——这是处理数据的核心思路。<br><br><span style="color:#c084fc">🪄 彩蛋：自由模式解锁「传送门」科技后，传送门的坐标也能存进数组——把门的 x 坐标放一个数组、y 坐标放一个数组，循环 buildPortal(gx[i], gy[i]) 批量放门！试试吧。</span>' }
+  },
+  {
+    id:16, name:'见机行事', chapter:6, chapterName:'自适应',
+    story:'机器人要学会「看路况走路」：前方能走就一直走，走不动就自动停下。这就是<b>while 条件循环</b>——和 for 不一样：for 是"走固定的步数"，while 是"走到不能再走为止"。让机器人一路走一路看：能种就把玉米种下。',
+    goal:{ type:'plant', crop:'玉米', need:2 },
+    template:{
+      python:'# while 条件循环：前方能走就一直走，走不动自动停\n# 提示：while can_move(): 里 move() 会一路走到墙边，边走边判断能不能种\n',
+      javascript:'// while 条件循环：前方能走就一直走，走不动自动停\n// 提示：while (canMove()) { } 里 move(); 会一路走到墙边，边走边判断能不能种\n',
+      cpp:'// while 条件循环：前方能走就一直走，走不动自动停\n// 提示：while (canMove()) { } 里 move(); 会一路走到墙边，边走边判断能不能种\n'
+    },
+    map:['R..F.F..'],
+    optimalSteps:7, optimalLines:4,
+    tip:{ title:'while：走到不能走为止', body:'<b>for</b> 循环：走固定的次数（第 2 章学过）<br><span style="color:#c678dd">for i in range(4):</span> 走 4 步<br><br><b>while</b> 循环：走到不能再走为止（今天学）<br><span style="color:#c678dd">while can_move():</span> 前方能走就一直走<br><br><b style="color:#61afef">Python</b><br><span style="color:#c678dd">while can_move():</span><br>&nbsp;&nbsp;&nbsp;&nbsp;move()<br><br><b style="color:#61afef">JavaScript / C++</b><br><span style="color:#c678dd">while (canMove()) {</span><br>&nbsp;&nbsp;&nbsp;&nbsp;move();<br><span style="color:#c678dd">}</span><br><br>每循环一次，先问 <b style="color:var(--green)">can_move() 是真还是假</b>：真就执行，假就跳出。走到墙边自然就停了——<b style="color:var(--green)">程序自己知道什么时候该停</b>，这就是条件循环的智慧。' }
+  },
+  {
+    id:17, name:'看天吃饭', chapter:6, chapterName:'自适应',
+    weather:'drought',
+    story:'今天老天爷安排的是<b>干旱天</b>🌵，普通作物停长——只有耐旱的玉米能活。用 <b>and</b> 把两个条件连起来："是干旱天 <b>并且</b> 面前能种"才种玉米。<b>and</b> 两边同时成立才执行，这就是程序「看天吃饭」的自适应。',
+    goal:{ type:'plant', crop:'玉米', need:2 },
+    template:{
+      python:'# 复合条件 and：两个条件同时成立才执行\n# 提示：今天干旱，用 is_drought() and can_plant() 判断后再种玉米\n',
+      javascript:'// 复合条件 and：两个条件同时成立才执行\n// 提示：今天干旱，用 isDrought() && canPlant() 判断后再种玉米\n',
+      cpp:'// 复合条件 and：两个条件同时成立才执行\n// 提示：今天干旱，用 isDrought() && canPlant() 判断后再种玉米\n'
+    },
+    map:['R..F..F'],
+    optimalSteps:6, optimalLines:4,
+    tip:{ title:'复合条件：and / &&', body:'程序做决定时，常常要同时看<b>几个条件</b>：<br><br><b>and（Python）</b> / <b>&&（JavaScript / C++）</b><br>两边<b style="color:var(--green)">都成立</b>才执行：<br><span style="color:#c678dd">if is_drought() and can_plant():</span><br><span style="color:#c678dd">if (isDrought() && canPlant()) {</span><br><br><b>or（Python）</b> / <b>||（JavaScript / C++）</b><br>两边<b style="color:var(--green)">任一边成立</b>就执行<br><br>今天天气是<b style="color:#f59e0b">干旱</b>🌵：普通作物停长、西瓜会掉成长，但<b style="color:#facc15">玉米耐旱</b>照常长。所以只种玉米——<b style="color:var(--green)">程序根据天气改变行为，这就是自适应</b>。' }
+  },
+  {
+    id:18, name:'全能农艺师', chapter:6, chapterName:'自适应',
+    story:'毕业考！把学到的都组合起来：<b>while 巡田 + 熟了收 + 空田种 + 函数封装</b>。写一个「巡田」函数，让机器人自己走、自己收、自己种——这就是你的第一个自动农艺师。',
+    goal:{ type:'both', crop:'玉米', plantNeed:2, harvestNeed:2 },
+    template:{
+      python:'# 综合挑战：把巡田逻辑封装成函数，一次写好\n# 提示：while 巡田 + is_ready() 收 + can_plant() 种，最后调用函数\n',
+      javascript:'// 综合挑战：把巡田逻辑封装成函数\n// 提示：while (canMove()) 巡田 + isReady() 收 + canPlant() 种，最后调用函数\n',
+      cpp:'// 综合挑战：把巡田逻辑封装成函数\n// 提示：while (canMove()) 巡田 + isReady() 收 + canPlant() 种，最后调用函数\n'
+    },
+    map:['R.F.C.F.C.'],
+    optimalSteps:8, optimalLines:9,
+    tip:{ title:'综合实战：自动农艺师', body:'把前面学的都装进一个函数：<br><br><b style="color:#61afef">Python</b><br><span style="color:#c678dd">def 巡田():</span><br>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#c678dd">while can_move():</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;move()<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#c678dd">if is_ready():</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;harvest()<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#c678dd">else:</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#c678dd">if can_plant():</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;plant("玉米")<br><span style="color:#c678dd">巡田()</span><br><br><b style="color:var(--green)">循环巡田 + 条件决策 + 函数封装</b>——这一串代码就是一个真正能自己干活的程序。<br><br>自由模式下，把 while 换成 <span style="color:#c678dd">while True:</span>（或 <span style="color:#c678dd">while (true) { }</span>）+ 走到商店 <span style="color:#c678dd">sell()</span>，就是完整的自动农场！' }
   }
 ];
 
@@ -912,7 +964,7 @@ const FREE_MAP = [
 ];
 const CROP_PRICES = { '玉米':5, '萝卜':8, '番茄':15, '小麦':25, '草莓':40, '西瓜':80 };   // 卖出单价
 const CROP_UNLOCK = { '玉米':0, '萝卜':20, '番茄':60, '小麦':150, '草莓':300, '西瓜':600 }; // 解锁所需金币
-const SPRINKLER_COST = 500; // 自动洒水器科技
+const SPRINKLER_COST = 200; // 自动洒水器科技：解锁后才能使用 water() 浇水 + 天气感知 is_drought()/is_rain()
 const PORTAL_COST = 400;     // 传送门科技（解锁后才能买传送门并放置/配对）
 const PORTAL_UNIT_COST = 200; // 单个传送门价格（buildPortal 放置时消耗 1 个）
 const LAND_COST = 30;   // 开垦一块土地
@@ -937,16 +989,33 @@ const WEATHER_INFO = {
   'rain':{ emoji:'🌧️', name:'下雨', desc:'作物生长速度翻倍！' },
   'drought':{ emoji:'🌵', name:'干旱', desc:'作物停止生长，快用 water() 浇水' }
 };
+/* 天气：真实时间随机切换（30~90 秒），不再按步数轮换 */
+let weatherTimer = null;
+function scheduleWeather(){
+  if(weatherTimer) clearTimeout(weatherTimer);
+  const delay = 30000 + Math.floor(Math.random()*60000);
+  weatherTimer = setTimeout(()=>{
+    const r = Math.random();
+    freeState.weather = r < 0.40 ? 'sun' : r < 0.65 ? 'cloud' : r < 0.85 ? 'rain' : 'drought';
+    log('info', WEATHER_INFO[freeState.weather].emoji + ' 天气变化：' + WEATHER_INFO[freeState.weather].name + ' — ' + WEATHER_INFO[freeState.weather].desc);
+    updateFreeHUD();
+    scheduleWeather();
+  }, delay);
+}
+function stopWeather(){
+  if(weatherTimer){ clearTimeout(weatherTimer); weatherTimer = null; }
+}
 
 /* ---------------- 作物定义 ---------------- */
 const CROPS = {
-  '玉米':{ color:'#facc15', leaf:'#4ade80', grow:3 },
+  '玉米':{ color:'#facc15', leaf:'#4ade80', grow:3, droughtSafe:true,  desc:'耐旱' },
   '萝卜':{ color:'#fb923c', leaf:'#4ade80', grow:4 },
   '番茄':{ color:'#f87171', leaf:'#4ade80', grow:5 },
-  '小麦':{ color:'#eab308', leaf:'#a3e635', grow:6 },
-  '草莓':{ color:'#fb7185', leaf:'#4ade80', grow:7 },
-  '西瓜':{ color:'#34d399', leaf:'#16a34a', grow:8 }
+  '小麦':{ color:'#eab308', leaf:'#a3e635', grow:6, droughtSafe:true,  desc:'耐旱' },
+  '草莓':{ color:'#fb7185', leaf:'#4ade80', grow:7, rainBoost:2,       desc:'雨天丰收' },
+  '西瓜':{ color:'#34d399', leaf:'#16a34a', grow:8, droughtVulnerable:true, desc:'怕旱' }
 };
+const ROT_STEPS = 10; // 作物成熟后多少步不收会枯萎
 
 /* ---------------- 状态 ---------------- */
 let state = {
@@ -1261,10 +1330,25 @@ function parseCond(expr, lang, line){
   let neg = false;
   let body = e;
   if(e.startsWith('not ') || e.startsWith('!')){ neg = true; body = e.replace(/^(not |!)/,'').trim(); }
-  const names = lang === 'python' ? { move:'can_move', ready:'is_ready', plant:'can_plant' } : { move:'canMove', ready:'isReady', plant:'canPlant' };
+  // 复合条件：A and B / A or B（Python）与 A && B / A || B（JS/C++）——先按 or 拆，再按 and 拆，各部分递归解析
+  const orRe = lang === 'python' ? /\s+or\s+/ : /\s*\|\|\s*/;
+  const andRe = lang === 'python' ? /\s+and\s+/ : /\s*&&\s*/;
+  if(orRe.test(e) || andRe.test(e)){
+    const ors = e.split(orRe);
+    if(ors.length > 1){
+      return { name:'_logic', op:'or', parts: ors.map(p => parseCond(p.trim(), lang, line)), neg };
+    }
+    const ands = e.split(andRe);
+    if(ands.length > 1){
+      return { name:'_logic', op:'and', parts: ands.map(p => parseCond(p.trim(), lang, line)), neg };
+    }
+  }
+  const names = lang === 'python' ? { move:'can_move', ready:'is_ready', plant:'can_plant', drought:'is_drought', rain:'is_rain' } : { move:'canMove', ready:'isReady', plant:'canPlant', drought:'isDrought', rain:'isRain' };
   if(body === names.move+'()' || body === names.move) return { name:'can_move', neg };
   if(body === names.ready+'()' || body === names.ready) return { name:'is_ready', neg };
   if(body === names.plant+'()' || body === names.plant) return { name:'can_plant', neg };
+  if(body === names.drought+'()' || body === names.drought) return { name:'is_drought', neg };
+  if(body === names.rain+'()' || body === names.rain) return { name:'is_rain', neg };
   // 比较表达式：i == 2 / x < 5 / score >= 10 / crops[i] != "萝卜" 等（存为裸条件，运行时求值）
   if(/^(?:[a-zA-Z_\u4e00-\u9fa5][\w\u4e00-\u9fa5]*(?:\[[^\]]*\])?|\d+)\s*(?:==|!=|>=|<=|>|<)\s*(?:[a-zA-Z_\u4e00-\u9fa5][\w\u4e00-\u9fa5]*|\d+|"[^"]*"|'[^']*')$/.test(body)){
     return { name:'_cmp', expr:body, neg };
@@ -1432,6 +1516,7 @@ const API_ALIAS = {
   can_plant:['can_plant','canPlant'],
   is_ready:['is_ready','isReady'],
   water:['water'],
+  buy_land:['buy_land','buyLand'],
   build_portal:['buildPortal','build_portal'],
   pair_portal:['pairPortal','pair_portal']
 };
@@ -1681,6 +1766,10 @@ async function execApi(api, stmt, rt){
       return true;
     }
     case 'water': {
+      if(rt.free && !freeState.unlocked['洒水器']){
+        rt.lastError = 'water() 需要先解锁「洒水器」科技（右侧面板 🪙' + SPRINKLER_COST + '），解锁后才能浇水。';
+        return false;
+      }
       const cell = rt.grid[rob.y][rob.x];
       if(cell.type !== 'farm' || !cell.crop || cell.crop==='ready'){
         rt.lastError = '这里没有正在生长的作物，浇不了水。'; return false;
@@ -1757,6 +1846,16 @@ async function execApi(api, stmt, rt){
       await renderMap();
       return true;
     }
+    case 'buy_land': {
+      if(!rt.free){ rt.lastError = 'buy_land() 只能在自由模式使用。'; return false; }
+      const ok = buyLand();
+      if(!ok){ rt.lastError = freeState.money < LAND_COST ? '金币不够开垦土地（需要 ' + LAND_COST + ' 金币）。' : '没有可开垦的地了（待开垦地和草地都开垦完了）。'; return false; }
+      rt.steps++;
+      tick(rt);
+      rt.highlightCell = {x:rob.x, y:rob.y};
+      await renderMap();
+      return true;
+    }
     case 'can_move': {
       const nx = rob.x + DIRS[rob.dir].x, ny = rob.y + DIRS[rob.dir].y;
       return !isWall(rt, nx, ny);
@@ -1786,6 +1885,12 @@ function evalCond(cond, rt){
   if(cond.name==='can_plant'){
     const cell = rt.grid[rt.robot.y][rt.robot.x];
     v = cell.type==='farm' && !cell.crop;
+  }
+  if(cond.name==='is_drought'){ v = freeState.weather === 'drought'; }
+  if(cond.name==='is_rain'){ v = freeState.weather === 'rain'; }
+  if(cond.name==='_logic'){
+    if(cond.op==='and') v = cond.parts.every(p => evalCond(p, rt));
+    else v = cond.parts.some(p => evalCond(p, rt));
   }
   if(cond.name==='_cmp'){
     const body = cond.expr;
@@ -1825,27 +1930,33 @@ function tick(rt){
     for(let y=0; y<rt.grid.length; y++) for(let x=0; x<rt.grid[y].length; x++){
       const cell = rt.grid[y][x];
       if(cell.type==='farm' && cell.crop==='planted'){
+        const cropDef = CROPS[cell.cropName] || {};
         let inc = 1;
         if(w === 'rain') inc = 2;
-        if(w === 'drought' && !cell.watered) inc = 0;
-        if(hasRiverNeighbor(rt, x, y)) inc++;  // 河边灌溉加成：靠河的地长得更快
+        if(w === 'rain' && cropDef.rainBoost) inc += cropDef.rainBoost;   // 草莓雨天丰收：额外再 +2
+        if(w === 'drought'){
+          if(cropDef.droughtVulnerable){ inc = -1; }              // 西瓜怕旱：干旱天掉成长
+          else if(cropDef.droughtSafe){ inc = 1; }                // 玉米/小麦耐旱：干旱天照长
+          else if(cell.watered){ inc = 1; }                       // 普通作物浇过水也能长
+          else inc = 0;                                           // 普通作物干旱停长
+        }
+        if(hasRiverNeighbor(rt, x, y)) inc++;  // 河边灌溉加成：靠河的地长得更快（干旱天也能救）
         cell.grow = (cell.grow||0) + inc;
+        if(cell.grow < 0) cell.grow = 0;
         const need = (CROPS[cell.cropName] && CROPS[cell.cropName].grow) || 3;
-        if(cell.grow >= need) cell.crop = 'ready';
-      }
-    }
-    if(freeState.unlocked['洒水器'] && rt.steps > 0 && rt.steps % 10 === 0){
-      for(const row of rt.grid) for(const cell of row){
-        if(cell.type==='farm' && cell.crop==='planted') cell.grow = (cell.grow||0) + 1;
+        if(cell.grow >= need){ cell.crop = 'ready'; cell.readyAge = 0; }
+      } else if(cell.type==='farm' && cell.crop==='ready'){
+        // 成熟后不收会枯萎：ROT_STEPS 步内不收就消失
+        cell.readyAge = (cell.readyAge||0) + 1;
+        if(cell.readyAge >= ROT_STEPS){
+          const gone = cell.cropName || '作物';
+          cell.crop = null; cell.cropName = null; cell.readyAge = 0; cell.watered = false;
+          log('warn', '💀 一株' + gone + '熟透没来得及收，枯萎了！');
+        }
       }
     }
     freeState.totalSteps = (freeState.totalSteps||0) + 1;
-    if(freeState.totalSteps % 40 === 0){
-      const seq = ['sun','cloud','rain','drought'];
-      freeState.weather = seq[(seq.indexOf(freeState.weather)+1)%4];
-      log('info', WEATHER_INFO[freeState.weather].emoji + ' 天气变化：' + WEATHER_INFO[freeState.weather].name + ' — ' + WEATHER_INFO[freeState.weather].desc);
-      updateFreeHUD();
-    }
+    // 天气改由真实时间随机切换（见 startFree 里的 weatherTimer），步数不再触发换天
   }
   if(rt.maxSteps && rt.steps >= rt.maxSteps){
     rt.running = false;
@@ -2012,6 +2123,7 @@ function checkGoal(goal, rt){
       else res.reason = '机器人还没走到仓库（金色格子）';
       return res;
     }
+    res.done = true;  // 无仓库要求：种/收达标即通过
   }
   else if(goal.type==='crops'){
     for(const c in goal.crops){
@@ -2860,12 +2972,13 @@ const HELP_SECTIONS = [
   ]},
   { title:'🌱 种植与收获', rows:[
     ['plant("作物")','在农田种下作物。作物名：玉米5 / 萝卜8 / 番茄15 / 小麦25 / 草莓40 / 西瓜80 金币'],
-    ['water()','给当前格的作物浇水，成长 +2'],
+    ['water()','给当前格的作物浇水，成长 +2。需先解锁「洒水器」科技（🪙200）才能用'],
     ['harvest()','收获当前格成熟的作物，进库存']
   ]},
   { title:'💰 经济', rows:[
     ['sell()','站在商店（金色💰格）卖出全部库存换金币'],
-    ['buy_land()','花 30 金币开垦最近的土地（先待开垦地，开完可开草地）']
+    ['buy_land()','花 30 金币开垦最近的土地（先待开垦地，开完可开草地）'],
+    ['🪙200 解锁「洒水器」','解锁后 water() 可用 + 获得天气感知指令 is_drought() / is_rain()，写条件浇水代码应对干旱']
   ]},
   { title:'🪄 传送（自由模式 · 解锁「传送门」科技后可用）', rows:[
     ['🪙400 解锁科技','解锁后才能在右侧面板购买传送门（🪙' + PORTAL_UNIT_COST + '/个，放进背包）'],
@@ -2875,7 +2988,9 @@ const HELP_SECTIONS = [
   { title:'🤔 条件判断（返回 真/假）', rows:[
     ['can_move()','前方能走吗？（Python: can_move()，JS/C++: canMove()）'],
     ['is_ready()','当前格的作物成熟了吗？（is_ready() / isReady()）'],
-    ['can_plant()','当前格能种下作物吗？（can_plant() / canPlant()）']
+    ['can_plant()','当前格能种下作物吗？（can_plant() / canPlant()）'],
+    ['is_drought()','现在是干旱天吗？作物会停长，用 water() 救（is_drought() / isDrought()）'],
+    ['is_rain()','现在是下雨天吗？作物生长翻倍（is_rain() / isRain()）']
   ]},
   { title:'📢 输出', rows:[
     ['print(...)','在控制台打印文字、数字或变量。JS 用 console.log("...")']
@@ -3133,7 +3248,7 @@ function renderMission(){
   const lv = LEVELS[state.levelIdx];
   $('lvNum').textContent = '委托 ' + lv.id;
   $('lvName').textContent = lv.name;
-  $('lvStory').textContent = lv.story;
+  $('lvStory').innerHTML = lv.story;
   const goal = lv.goal;
   const chips = [];
   if(goal.type==='plant') chips.push({ text:'🌱 种下 ' + goal.need + ' 棵「' + goal.crop + '」', ok:false });
@@ -3165,9 +3280,13 @@ function switchLang(lang){
   state.lang = lang;
   $('langSelect').value = lang;
   const code = $('codeInput').value;
-  const isFresh = (code.trim()==='' || !prev || code === LANGS[prev].template || code === LANGS[lang].template);
+  // 关卡用关卡模板、自由模式用自由模板；若当前代码仍是某语言的模板（未修改），切换时自动换上对应语言模板
+  const lv = LEVELS[state.levelIdx];
+  const prevTmpl = state.mode==='level' ? (lv.template && lv.template[prev]) : FREE_TEMPLATE[prev];
+  const newTmpl = state.mode==='level' ? (lv.template && lv.template[lang]) : FREE_TEMPLATE[lang];
+  const isFresh = (code.trim()==='' || !prev || code === prevTmpl || code === newTmpl || code === LANGS[prev].template || code === LANGS[lang].template);
   if(isFresh){
-    $('codeInput').value = LANGS[lang].template;
+    $('codeInput').value = newTmpl || LANGS[lang].template;
   } else {
     log('warn', '💡 切换了语言，当前代码保留（不同语言语法不同，运行前建议点「重置」换上新语言的模板）');
   }
@@ -3229,6 +3348,9 @@ function updateFreeHUD(){
     const el = document.createElement('span');
     el.className = 'inv-chip' + (freeState.unlocked[crop] ? '' : ' locked');
     el.textContent = crop + ' ×' + freeState.inventory[crop];
+    const cd = CROPS[crop] || {};
+    const perStep = (CROP_PRICES[crop]/cd.grow).toFixed(1);
+    el.title = '售价 ' + CROP_PRICES[crop] + ' / 生长 ' + cd.grow + ' 步 / 每步收益 ' + perStep + ' 金币' + (cd.desc ? '（' + cd.desc + '）' : '');
     inv.appendChild(el);
   }
   const tech = $('freeTech');
@@ -3238,7 +3360,8 @@ function updateFreeHUD(){
     const b = document.createElement('button');
     b.className = 'tech-btn';
     b.textContent = '🔓 ' + crop + ' 🪙' + CROP_UNLOCK[crop];
-    b.title = '解锁后可在农田种植「' + crop + '」，售价 ' + CROP_PRICES[crop] + ' 金币/个';
+    const cd = CROPS[crop] || {};
+    b.title = '解锁后可在农田种植「' + crop + '」，售价 ' + CROP_PRICES[crop] + ' 金币/个，生长 ' + cd.grow + ' 步（每步收益 ' + (CROP_PRICES[crop]/cd.grow).toFixed(1) + '）' + (cd.desc ? '；' + cd.desc : '');
     b.disabled = freeState.money < CROP_UNLOCK[crop];
     b.onclick = () => buyUnlock(crop);
     tech.appendChild(b);
@@ -3264,7 +3387,7 @@ function updateFreeHUD(){
     const b = document.createElement('button');
     b.className = 'tech-btn';
     b.textContent = '🚿 洒水器 🪙' + SPRINKLER_COST;
-    b.title = '每10步自动给全田作物+1成长';
+    b.title = '解锁后才能使用 water() 浇水（+2 成长，干旱天救急），还能用 is_drought() / is_rain() 感知天气';
     b.disabled = freeState.money < SPRINKLER_COST;
     b.onclick = () => buyUnlock('洒水器');
     tech.appendChild(b);
@@ -3283,8 +3406,8 @@ function updateFreeHUD(){
     tech.innerHTML = '<span class="tech-done">🎉 全部科技已解锁！</span>';
   }
   $('freeHint').innerHTML = (window.innerWidth || document.documentElement.clientWidth) < 1000
-    ? '💡 <span style="color:#61afef">water()</span>浇水 · 40步换天气 · 🌊/🐑挡路 · ✨传送 · 草地可开垦'
-    : '💡 提示：<span style="color:#61afef">water()</span> 可浇水；每 40 步天气轮换（🌧️ 生长翻倍 / 🌵 干旱停长）；<span style="color:#38bdf8">🌊 河边农田有灌溉加成 +1</span>（干旱天也能长）。解锁<span style="color:#c084fc">🪄 传送门</span>科技后：买门 → buildPortal(x, y) 放置 → pairPortal 配对 → 机器人走过门瞬移（坐标从 0 开始）。草地也能花钱开垦成农田（待开垦优先）。';
+    ? '💡 <span style="color:#61afef">water()</span>浇水 · 🌦️天气随机 · 🌊/🐑挡路 · ✨传送 · 草地可开垦'
+    : '💡 天气约 30~90 秒随机换（🌧️生长翻倍 · 🌵停长：玉米耐旱、西瓜怕旱）。🪙' + SPRINKLER_COST + ' 解锁洒水器才能 <span style="color:#61afef">water()</span>，配合 <span style="color:#61afef">is_drought()</span> 条件浇水；🌊河边农田 +1；🪄传送门买门配对。';
 }
 
 function buyUnlock(crop){
@@ -3292,7 +3415,7 @@ function buyUnlock(crop){
   if(freeState.unlocked[crop] || freeState.money < cost) return;
   freeState.money -= cost;
   freeState.unlocked[crop] = true;
-  log('ok', crop==='洒水器' ? '🚿 已解锁自动洒水器！每10步自动给全田作物加成长' : crop==='传送门' ? '🪄 已解锁传送门科技！现在可以买传送门、用 buildPortal(x, y) 放置、用 pairPortal(x1, y1, x2, y2) 配对传送' : '🔓 已解锁「' + crop + '」！现在可以 plant("' + crop + '") 了');
+  log('ok', crop==='洒水器' ? '🚿 已解锁洒水器！现在 water() 可用了，还能用 is_drought() / is_rain() 写条件浇水' : crop==='传送门' ? '🪄 已解锁传送门科技！现在可以买传送门、用 buildPortal(x, y) 放置、用 pairPortal(x1, y1, x2, y2) 配对传送' : '🔓 已解锁「' + crop + '」！现在可以 plant("' + crop + '") 了');
   updateFreeHUD(); saveGame();
   checkBadges();
 }
@@ -3357,7 +3480,7 @@ const SKINS = [
   { id:'gold', name:'黄金农夫', icon:'🥇', body0:'#fde68a', body1:'#d97706', arm:'#b45309', armHi:'#fcd34d', screen:'#2a1a00', scan:'250,204,21',
     unlock:()=>((state.coins||0)+freeState.totalEarned)>=200, lockDesc:'累计赚取 200 金币解锁' },
   { id:'crystal', name:'代码行者', icon:'💠', body0:'#c4b5fd', body1:'#7c3aed', arm:'#6d28d9', armHi:'#ddd6fe', screen:'#1a0f2e', scan:'167,139,250',
-    unlock:()=>LEVELS.every(l=>state.best[l.id]), lockDesc:'通关全部 15 关解锁' },
+    unlock:()=>LEVELS.every(l=>state.best[l.id]), lockDesc:'通关全部关卡解锁' },
   { id:'rainbow', name:'彩虹机', icon:'🌈', body0:'#f9a8d4', body1:'#db2777', arm:'#be185d', armHi:'#fbcfe8', screen:'#2a0a1e', scan:'244,114,182',
     unlock:()=>freeState.ordersDone>=10, lockDesc:'完成 10 个订单解锁' }
 ];
@@ -3365,13 +3488,13 @@ const BADGES = [
   { id:'first',   icon:'🎯', name:'初出茅庐',     desc:'完成第 1 关',              check:()=>!!state.best[1] },
   { id:'perf',    icon:'🌟', name:'完美开局',     desc:'任意 1 关拿到 3 星',       check:()=>Object.values(state.stars).some(s=>s>=3) },
   { id:'chapter4',icon:'🏆', name:'函数大师',     desc:'第 4 章三关全部 3 星',     check:()=>[10,11,12].every(id=>(state.stars[id]||0)>=3) },
-  { id:'finish',  icon:'🔥', name:'通关全关卡',   desc:'通关全部 12 关',           check:()=>LEVELS.every(l=>state.best[l.id]) },
+  { id:'finish',  icon:'🔥', name:'通关全关卡',   desc:'通关全部关卡',           check:()=>LEVELS.every(l=>state.best[l.id]) },
   { id:'plant1',  icon:'🌱', name:'农场新手',     desc:'在自由农场种下第一棵作物', check:()=>(freeState.plantedTotal||0)>0 },
   { id:'order1',  icon:'📋', name:'订单小能手',   desc:'完成第一个订单',           check:()=>freeState.ordersDone>=1 },
   { id:'order10', icon:'📦', name:'订单批发商',   desc:'累计完成 10 个订单',       check:()=>freeState.ordersDone>=10 },
   { id:'steps500',icon:'⏱', name:'辛勤劳作',     desc:'自由农场累计走满 500 步',  check:()=>freeState.totalSteps>=500 },
   { id:'steps2k', icon:'🚜', name:'铁人农夫',     desc:'自由农场累计走满 2000 步', check:()=>freeState.totalSteps>=2000 },
-  { id:'sprinkler',icon:'💧',name:'自动化先驱',   desc:'解锁自动洒水器',           check:()=>!!freeState.unlocked['洒水器'] },
+  { id:'sprinkler',icon:'💧',name:'自动化先驱',   desc:'解锁洒水器',             check:()=>!!freeState.unlocked['洒水器'] },
   { id:'crops',   icon:'🍅', name:'作物收藏家',   desc:'解锁全部 6 种作物',        check:()=>Object.keys(CROP_PRICES).every(c=>freeState.unlocked[c]) },
   { id:'rich',    icon:'💎', name:'富甲一方',     desc:'累计财富达到 1000 金币',   check:()=>((state.coins||0)+freeState.totalEarned)>=1000 }
 ];
@@ -3401,7 +3524,7 @@ function newOrder(){
   updateFreeHUD();
 }
 function buyLand(){
-  if(freeState.money < LAND_COST || !rt) return;
+  if(freeState.money < LAND_COST || !rt) return false;
   const find = (types) => {
     let best = null, bd = Infinity;
     for(let y=0;y<rt.h;y++) for(let x=0;x<rt.w;x++){
@@ -3414,13 +3537,14 @@ function buyLand(){
     return best;
   };
   const t = find(['fallow']) || find(['grass']);
-  if(!t){ log('warn', '没有可开垦的地了（待开垦地和草地都开垦完了）'); return; }
+  if(!t){ log('warn', '没有可开垦的地了（待开垦地和草地都开垦完了）'); return false; }
   t.cell.type = 'farm'; t.cell.crop = null; t.cell.cropName = null;
   freeState.money -= LAND_COST;
   freeState.lands++;
   renderMap();
   log('ok', t.kind==='grass' ? '⛏ 开垦了一片草地当农田！' : '⛏ 开垦了一块新农田！');
   updateFreeHUD(); saveGame();
+  return true;
 }
 
 function startFree(showTipFlag){
@@ -3442,14 +3566,17 @@ function startFree(showTipFlag){
   $('consoleDot').className = 'dot';
   $('consoleTitle').textContent = '控制台';
   setRunningUI(false);
+  freeState.weather = 'sun';   // 进自由模式重置天气（避免 L17 干旱关残留）
   if(!freeState.order) newOrder();
   updateFreeHUD();
   renderMap();
+  scheduleWeather();   // 自由模式期间按真实时间随机换天气
   if(showTipFlag === false) return;
-  showTip({ tip:{ title:'自由农场 · 怎么玩', body:'<b>目标</b>：写代码让机器人自动种收卖，攒钱解锁科技，把农场做大。<br><br>· 走到<b>农田</b>（棕色）用 <span style="color:#61afef">plant("玉米")</span> 种下<br>· 作物种下后<b>每走一步长一点</b>，成熟后 <span style="color:#61afef">harvest()</span> 收获进库存<br>· 走到商店（<b>💰</b>格）用 <span style="color:#61afef">sell()</span> 卖出库存换金币<br>· 用金币在右侧解锁<b>新作物</b>和<b>开垦土地</b>（草地也能开垦）<br><br>· 试试 <span style="color:#c678dd">while True:</span>（或 while (true) { }）写自动巡田脚本<br>· 脚本可随时用「⏹ 停止」中断<br>· 每次运行最多 ' + FREE_MAX_STEPS + ' 步会自动停止' }});
+  showTip({ tip:{ title:'自由农场 · 怎么玩', body:'<b>目标</b>：写代码让机器人自动种收卖，攒钱解锁科技，把农场做大。<br><br>· 农田里 <span style="color:#61afef">plant("玉米")</span> 种下 → 每走一步长一点 → 成熟后 <span style="color:#61afef">harvest()</span>（熟透放太久会枯萎，记得及时收）→ 走到商店 <span style="color:#61afef">sell()</span> 换金币<br>· 金币解锁<b>新作物</b>（每步收益不同，悬停查看）、<b>开垦土地</b>、<b>传送门</b>科技<br><br>· 天气<b>约 30~90 秒随机切换</b>：下雨 🌧️ 生长翻倍，干旱 🌵 停长（玉米耐旱、西瓜怕旱）<br>· 解锁「洒水器」后 <span style="color:#61afef">water()</span> 可用，配合 <span style="color:#61afef">is_drought()</span> 写条件浇水<br>· 用 <span style="color:#c678dd">while True:</span> 写自动巡田脚本（⏹ 可随时停止）' }});
 }
 
 function exitFree(){
+  stopWeather();   // 退出自由模式，停止换天定时器
   state.mode = 'level';
   $('btnFree').textContent = '🆓 自由模式';
   $('btnChapter').disabled = false;
@@ -3462,6 +3589,7 @@ function exitFree(){
 function startLevel(idx, showDialog){
   state.levelIdx = idx;
   // 从自由模式（含存档恢复）切回关卡时复位面板
+  stopWeather();   // 离开自由模式，停止换天定时器
   state.mode = 'level';
   $('btnFree').textContent = '🆓 自由模式';
   $('btnChapter').disabled = false;
@@ -3474,6 +3602,7 @@ function startLevel(idx, showDialog){
   particles = [];
   robotBob = 0;
   const lv = LEVELS[idx];
+  if(lv.weather) freeState.weather = lv.weather;   // 第6章关卡固定天气（is_drought / is_rain 生效）
   $('chapterBadge').textContent = '第 ' + lv.chapter + ' 章 · ' + lv.chapterName;
   $('codeInput').value = (lv.template && lv.template[state.lang]) || LANGS[state.lang].template;
   syncEditor();
