@@ -89,10 +89,10 @@ select.lang-select{
   background:var(--panel2); color:var(--text); border:1px solid var(--border);
   border-radius:8px; padding:7px 12px; font-size:13px; outline:none; cursor:pointer;
 }
-#btnChapter,#btnFree,#btnSound{ background:var(--panel2); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:7px 14px; font-size:13px; transition:all .15s; }
+#btnChapter,#btnFree,#btnSound,#btnAbout{ background:var(--panel2); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:7px 14px; font-size:13px; transition:all .15s; }
 #btnSound{ padding:7px 10px; }
-#btnChapter:hover,#btnFree:hover,#btnSound:hover{ border-color:var(--blue); box-shadow:0 0 14px rgba(96,165,250,.25); transform:translateY(-1px); }
-#btnChapter:active,#btnFree:active,#btnSound:active{ transform:scale(.94); }
+#btnChapter:hover,#btnFree:hover,#btnSound:hover,#btnAbout:hover{ border-color:var(--blue); box-shadow:0 0 14px rgba(96,165,250,.25); transform:translateY(-1px); }
+#btnChapter:active,#btnFree:active,#btnSound:active,#btnAbout:active{ transform:scale(.94); }
 select.lang-select{ transition:all .15s; }
 select.lang-select:active{ transform:scale(.96); }
 
@@ -3464,7 +3464,16 @@ function updateFreeHUD(){
   const tech = $('freeTech');
   tech.innerHTML = '';
   for(const crop of ['萝卜','番茄','小麦','草莓','西瓜']){
-    if(freeState.unlocked[crop]) continue;
+    if(freeState.unlocked[crop]){
+      const d = document.createElement('button');
+      d.className = 'tech-btn';
+      d.textContent = '✅ ' + crop + ' 已解锁';
+      d.title = '已解锁，可直接在农田种植';
+      d.disabled = true;
+      d.style.opacity = .55;
+      tech.appendChild(d);
+      continue;
+    }
     const b = document.createElement('button');
     b.className = 'tech-btn';
     b.textContent = '🔓 ' + crop + ' 🪙' + CROP_UNLOCK[crop];
