@@ -283,6 +283,8 @@ main{ flex:1; display:flex; gap:0; min-height:0; }
 .stats-row b{ color:#fff; font-size:13px; }
 .stats-hint{ font-size:11px; color:var(--muted); opacity:.75; margin-top:8px; text-align:center; }
 .mbtn{ flex:1; padding:11px 0; border-radius:10px; font-size:14px; font-weight:700; border:none; }
+.sponsor-btn{ flex:0 0 auto; padding:12px 28px; background:linear-gradient(135deg,#f59e0b,#f97316); color:#fff; text-decoration:none; display:inline-block; box-shadow:0 4px 14px rgba(249,115,22,.35); }
+.sponsor-btn:hover{ filter:brightness(1.1); }
 .mbtn.primary{ background:linear-gradient(135deg,#16a34a,#22c55e); color:#fff; }
 .mbtn.ghost{ background:var(--panel2); color:var(--dim); border:1px solid var(--border); }
 .mbtn:hover{ filter:brightness(1.1); }
@@ -398,6 +400,7 @@ main{ flex:1; display:flex; gap:0; min-height:0; }
     <button id="btnSound" title="音效开关">🔊</button>
     <button id="btnChapter" title="章节地图">🗺 章节</button>
     <button id="btnFree" title="自由模式：开放农场自动化经营">🆓 自由模式</button>
+    <button id="btnAbout" title="关于与赞助">ℹ️ 关于</button>
     <select id="langSelect" class="lang-select" title="切换编程语言">
       <option value="python">🐍 Python</option>
       <option value="javascript">🌐 JavaScript</option>
@@ -578,6 +581,24 @@ main{ flex:1; display:flex; gap:0; min-height:0; }
   </div>
 </div>
 
+<!-- ============ 关于弹窗 ============ -->
+<div id="aboutModal" class="modal-mask hidden">
+  <div class="modal" style="max-width:480px;">
+    <h2 style="font-size:18px; margin-bottom:6px;">🌾 码上农场 CodeFarm</h2>
+    <div style="font-size:13px; line-height:2; color:var(--dim);">
+      <p>一款用代码种田的编程教学小游戏：顺序执行、循环、条件判断、函数、数组、while……在 18 个委托里一步步学会编程，还能在自由农场里写脚本实现全自动经营。</p>
+      <p>支持 <b>Python / JavaScript / C++</b> 三种语言实时切换，边玩边学。</p>
+      <p style="color:var(--dim2);">如果喜欢这个小游戏，欢迎赞助支持作者持续更新 🧡</p>
+    </div>
+    <div class="modal-btn-row" style="justify-content:center; margin-top:6px;">
+      <a id="btnSponsor" class="mbtn sponsor-btn" href="https://ifdian.net/a/yanziqin5" target="_blank" rel="noopener noreferrer">⚡ 爱发电 · 赞助支持</a>
+    </div>
+    <div class="modal-btn-row">
+      <button class="mbtn primary" id="btnAboutClose">知道了</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============ 知识点弹窗 ============ -->
 <div id="tipModal" class="modal-mask hidden">
   <div class="modal">
@@ -627,8 +648,8 @@ const LANGS = {
       water:'water()',
       is_drought:'is_drought()',
       is_rain:'is_rain()',
-      build_portal:'buildPortal(5, 6)',
-      pair_portal:'pairPortal(1, 1, 8, 4)'
+      build_portal:'build_portal(5, 6)',
+      pair_portal:'pair_portal(1, 1, 8, 4)'
     },
     help:`<b style="color:var(--text)">可用的农场指令（Python 语法）</b><br>
       <span style="color:#61afef">move()</span> — 向前走一格<br>
@@ -643,8 +664,8 @@ const LANGS = {
       <span style="color:#61afef">water()</span> — 给当前格正在生长的作物浇水 +2 成长（需先解锁「洒水器」科技 🪙' + SPRINKLER_COST + '；干旱天救急）<br>
       <span style="color:#61afef">is_drought()</span> — 现在是干旱天吗（作物停长）？（用于 if）<br>
       <span style="color:#61afef">is_rain()</span> — 现在是下雨天吗（生长翻倍）？（用于 if）<br>
-      <span style="color:#61afef">buildPortal(x, y)</span> — 消耗 1 个传送门，在 (x, y) 放置（只能放草地/贫瘠地；先在右侧面板买传送门）<br>
-      <span style="color:#61afef">pairPortal(x1, y1, x2, y2)</span> — 把两扇自己放置的门配对，机器人走到任意一扇会瞬移到另一扇（坐标从 0 开始）<br><br>
+      <span style="color:#61afef">build_portal(x, y)</span> — 消耗 1 个传送门，在 (x, y) 放置（只能放草地/贫瘠地；先在右侧面板买传送门）<br>
+      <span style="color:#61afef">pair_portal(x1, y1, x2, y2)</span> — 把两扇自己放置的门配对，机器人走到任意一扇会瞬移到另一扇（坐标从 0 开始）<br><br>
       <span style="color:var(--dim2)">· 行尾不需要分号，缩进用 4 个空格<br>· 每行写一条指令，从上到下依次执行<br>· <span style="color:#c678dd"># 开头</span>是注释，机器人会跳过<br>· <span style="color:#c678dd">while True:</span> 可以写无限循环（自由模式自动农场）</span>`
   },
   javascript: {
@@ -799,7 +820,7 @@ const LEVELS = [
       '.........'
     ],
     optimalSteps:11, optimalLines:6,
-    tip:{ title:'循环的价值：代码短 ≠ 功能少', body:'对比两种写法：<br><br>❌ 笨办法：<br>move(); move(); plant(); move(); move(); plant(); move(); move(); plant(); move(); move();<br>（11 行重复代码）<br><br>✅ 循环写法：<br><span style="color:#c678dd">for i in range(3):</span><br>&nbsp;&nbsp;&nbsp;&nbsp;move(); move(); plant("玉米")<br>move(); move()<br>（6 行，功能一模一样）<br><br>写 100 块田呢？笨办法要 300+ 行，循环只改一个数字。这就是<b style="color:var(--green)">程序员用循环偷懒的智慧</b>。' }
+    tip:{ title:'循环的价值：代码短 ≠ 功能少', body:'对比两种写法（用 Python 展示）：<br><br>❌ 笨办法：<br>move()<br>move()<br>plant("玉米")<br>……（再重复 2 遍）……<br>move()<br>move()<br>（11 行重复代码）<br><br>✅ 循环写法：<br><span style="color:#c678dd">for i in range(3):</span><br>&nbsp;&nbsp;&nbsp;&nbsp;move()<br>&nbsp;&nbsp;&nbsp;&nbsp;move()<br>&nbsp;&nbsp;&nbsp;&nbsp;plant("玉米")<br>move()<br>move()<br>（6 行，功能一模一样）<br><br>写 100 块田呢？笨办法要 300+ 行，循环只改一个数字。这就是<b style="color:var(--green)">程序员用循环偷懒的智慧</b>。' }
   },
   {
     id:7, name:'聪明绕路', chapter:3, chapterName:'条件判断',
@@ -827,7 +848,7 @@ const LEVELS = [
   },
   {
     id:9, name:'条件大师', chapter:3, chapterName:'条件判断',
-    story:'石头挡路、熟玉米要收、仓库要开——三种情况凑到一起。一个代码里要判断两次，试试把 if 放进 if 里（嵌套）。',
+    story:'石头挡路、熟玉米要收、仓库要开——三种情况凑到一起。一个代码里要判断两次：该收的收下来，该绕的绕过去。',
     goal:{ type:'both', plantNeed:0, harvestNeed:2, reach:true },
     map:[
       'R.CC.XG.',
@@ -901,7 +922,7 @@ const LEVELS = [
   },
   {
     id:15, name:'跳过萝卜', chapter:5, chapterName:'数组 · 列表',
-    story:'清单里混了一棵萝卜，可是今天萝卜缺货，种不了！让机器人自己判断：<b>遇到萝卜就跳过</b>，其他的照常种下。清单遍历 + 条件判断的组合拳，来试试。',
+    story:'清单里混了一棵萝卜，可是老板今天只要玉米和番茄——萝卜种下去不算数，还会让任务失败。让机器人自己判断：<b>遇到萝卜就跳过</b>，其他的照常种下。清单遍历 + 条件判断的组合拳，来试试。',
     goal:{ type:'crops', crops:{ '玉米':2, '番茄':1 } },
     map:[
       'R.F.F.F.F',
@@ -909,7 +930,7 @@ const LEVELS = [
       '.........'
     ],
     optimalSteps:12, optimalLines:5,
-    tip:{ title:'数组 + 条件：筛选清单', body:'遍历清单时可以用 if 挑出要处理的：<br><br><b style="color:#61afef">Python</b><br><span style="color:#c678dd">for i in range(4):</span><br>&nbsp;&nbsp;&nbsp;&nbsp;move()<br>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#c678dd">if crops[i] != "萝卜":</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;plant(crops[i])<br><br><b style="color:#61afef">JavaScript / C++</b><br><span style="color:#c678dd">for (let i=0; i<4; i++) {</span><br>&nbsp;&nbsp;&nbsp;&nbsp;move();<br>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#c678dd">if (crops[i] != "萝卜") {</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;plant(crops[i]);<br>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#c678dd">}</span><br><span style="color:#c678dd">}</span><br><br><b style="color:var(--green)">crops[i] != "萝卜"</b> 的意思是"清单里这一项不是萝卜"。把条件写进循环，就能对每一件数据做筛选——这是处理数据的核心思路。<br><br><span style="color:#c084fc">🪄 彩蛋：自由模式解锁「传送门」科技后，传送门的坐标也能存进数组——把门的 x 坐标放一个数组、y 坐标放一个数组，循环 buildPortal(gx[i], gy[i]) 批量放门！试试吧。</span>' }
+    tip:{ title:'数组 + 条件：筛选清单', body:'遍历清单时可以用 if 挑出要处理的：<br><br><b style="color:#61afef">Python</b><br><span style="color:#c678dd">for i in range(4):</span><br>&nbsp;&nbsp;&nbsp;&nbsp;move()<br>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#c678dd">if crops[i] != "萝卜":</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;plant(crops[i])<br><br><b style="color:#61afef">JavaScript / C++</b><br><span style="color:#c678dd">for (let i=0; i<4; i++) {</span><br>&nbsp;&nbsp;&nbsp;&nbsp;move();<br>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#c678dd">if (crops[i] != "萝卜") {</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;plant(crops[i]);<br>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#c678dd">}</span><br><span style="color:#c678dd">}</span><br><br><b style="color:var(--green)">crops[i] != "萝卜"</b> 的意思是"清单里这一项不是萝卜"。把条件写进循环，就能对每一件数据做筛选——这是处理数据的核心思路。<br><br><span style="color:#c084fc">🪄 彩蛋：自由模式解锁「传送门」科技后，传送门的坐标也能存进数组——把门的 x 坐标放一个数组、y 坐标放一个数组，循环 <b>Python: build_portal(gx[i], gy[i]) / JS、C++: buildPortal(gx[i], gy[i])</b> 批量放门！试试吧。</span>' }
   },
   {
     id:16, name:'见机行事', chapter:6, chapterName:'自适应',
@@ -927,7 +948,7 @@ const LEVELS = [
   {
     id:17, name:'看天吃饭', chapter:6, chapterName:'自适应',
     weather:'drought',
-    story:'今天老天爷安排的是<b>干旱天</b>🌵，普通作物停长——只有耐旱的玉米能活。用 <b>and</b> 把两个条件连起来："是干旱天 <b>并且</b> 面前能种"才种玉米。<b>and</b> 两边同时成立才执行，这就是程序「看天吃饭」的自适应。',
+    story:'今天老天爷安排的是<b>干旱天</b>🌵，普通作物停长——只有耐旱的玉米能扛住。用 <b>and</b> 把两个条件连起来："是干旱天 <b>并且</b> 面前能种"才种玉米。<b>and</b> 两边同时成立才执行，这就是程序「看天吃饭」的自适应。',
     goal:{ type:'plant', crop:'玉米', need:2 },
     template:{
       python:'# 复合条件 and：两个条件同时成立才执行\n# 提示：今天干旱，用 is_drought() and can_plant() 判断后再种玉米\n',
@@ -2977,7 +2998,7 @@ const HELP_SECTIONS = [
     ['turn_left() / turn_right()','原地左转 / 右转（机器人初始朝右）']
   ]},
   { title:'🌱 种植与收获', rows:[
-    ['plant("作物")','在农田种下作物。作物名：玉米5 / 萝卜8 / 番茄15 / 小麦25 / 草莓40 / 西瓜80 金币'],
+    ['plant("作物")','在农田种下作物。作物：玉米/萝卜/番茄/小麦/草莓/西瓜（卖出价 5/8/15/25/40/80 金币；除玉米外需先在右侧面板花金币解锁）'],
     ['water()','给当前格的作物浇水，成长 +2。需先解锁「洒水器」科技（🪙200）才能用'],
     ['harvest()','收获当前格成熟的作物，进库存']
   ]},
@@ -2989,7 +3010,7 @@ const HELP_SECTIONS = [
   { title:'🪄 传送（自由模式 · 解锁「传送门」科技后可用）', rows:[
     ['🪙400 解锁科技','解锁后才能在右侧面板购买传送门（🪙' + PORTAL_UNIT_COST + '/个，放进背包）'],
     ['buildPortal(x, y)','消耗背包里 1 个传送门，在 (x, y) 放置。只能放在草地或贫瘠地上；坐标从 0 开始，(0,0) 是地图左上角'],
-    ['pairPortal(x1, y1, x2, y2)','把两扇自己放置的门配对成传送通道：走到任意一扇，瞬间出现在另一扇门口。未配对的单扇门走过去会提示“还没配对”']
+    ['pairPortal(x1, y1, x2, y2)','把两扇自己放置的门配对成传送通道：走到任意一扇，瞬间传送到另一扇门的位置。未配对的单扇门走过去会提示“还没配对”']
   ]},
   { title:'🤔 条件判断（返回 真/假）', rows:[
     ['can_move()','前方能走吗？（Python: can_move()，JS/C++: canMove()）'],
@@ -3047,24 +3068,20 @@ if can_move():
 else:
     turn_left()
 
-【完整种收卖】自由模式新手流程：
+【种下作物】自由模式新手起步（等 3 步成熟后 harvest() 收获，再走到商店 sell()；解锁「洒水器」后可加 water() 加速）：
 move()
 move()
 plant("玉米")
-water()
-harvest()
-move()
-sell()
 
 【数组种田】按清单批量种：
 for i in range(3):
     move()
     plant(crops[i])
 
-【传送门通道】自由模式解锁科技 → 买门 → 放置 → 配对：
-buildPortal(1, 1)
-buildPortal(8, 4)
-pairPortal(1, 1, 8, 4)
+【传送门通道】自由模式解锁科技 → 买门 → 放置 → 配对（Python 用 build_portal / pair_portal，JS、C++ 用 buildPortal / pairPortal）：
+build_portal(1, 1)
+build_portal(8, 4)
+pair_portal(1, 1, 8, 4)
 move()` }
 ];
 
@@ -3088,6 +3105,8 @@ function openHelp(){
   $('helpModal').classList.remove('hidden');
 }
 function closeHelp(){ $('helpModal').classList.add('hidden'); }
+function openAbout(){ $('aboutModal').classList.remove('hidden'); }
+function closeAbout(){ $('aboutModal').classList.add('hidden'); }
 
 function renderBadgeWall(){
   if(!state.badges) state.badges = [];
@@ -3376,9 +3395,9 @@ const SOLUTIONS = [
   { python:"def 种田():\n    move()\n    plant(\"玉米\")\n种田()\n种田()\n种田()\nmove()",
     javascript:"function 种田() {\n    move();\n    plant(\"玉米\");\n}\n种田();\n种田();\n种田();\nmove();",
     cpp:"void 种田() {\n    move();\n    plant(\"玉米\");\n}\n种田();\n种田();\n种田();\nmove();" },
-  { python:"def 种田():\n    move()\n    plant(\"玉米\")\nfor i in range(4):\n    种田()\nmove()",
-    javascript:"function 种田() {\n    move();\n    plant(\"玉米\");\n}\nfor (let i=0; i<4; i++) {\n    种田();\n}\nmove();",
-    cpp:"void 种田() {\n    move();\n    plant(\"玉米\");\n}\nfor (int i=0; i<4; i++) {\n    种田();\n}\nmove();" },
+  { python:"def 种一排():\n    for i in range(4):\n        move()\n        plant(\"玉米\")\n种一排()\nmove()",
+    javascript:"function 种一排() {\n    for (let i=0; i<4; i++) {\n        move();\n        plant(\"玉米\");\n    }\n}\n种一排();\nmove();",
+    cpp:"void 种一排() {\n    for (int i=0; i<4; i++) {\n        move();\n        plant(\"玉米\");\n    }\n}\n种一排();\nmove();" },
   { python:"crops = [\"玉米\", \"萝卜\", \"番茄\"]\nfor i in range(3):\n    move()\n    move()\n    plant(crops[i])",
     javascript:"let crops = [\"玉米\", \"萝卜\", \"番茄\"];\nfor (let i=0; i<3; i++) {\n    move();\n    move();\n    plant(crops[i]);\n}",
     cpp:"string crops[] = {\"玉米\", \"萝卜\", \"番茄\"};\nfor (int i=0; i<3; i++) {\n    move();\n    move();\n    plant(crops[i]);\n}" },
@@ -3400,7 +3419,7 @@ const SOLUTIONS = [
 ];
 /* ---------------- 自由模式 ---------------- */
 const FREE_TEMPLATE = {
-  python: '# 自由农场 · 用代码实现自动化' + '\n' + '# 示例：向前走两步，种下玉米' + '\n' + 'move()' + '\n' + 'move()' + '\n' + 'plant("玉米")' + '\n' + '# 提示：作物种下后每走一步长一点，成熟后 harvest()' + '\n' + '# 进阶：解锁传送门科技后：买门 → buildPortal 放置 → pairPortal 配对 → 走过门传送' + '\n' + '# 进阶：用 while True: 写自动巡田脚本',
+  python: '# 自由农场 · 用代码实现自动化' + '\n' + '# 示例：向前走两步，种下玉米' + '\n' + 'move()' + '\n' + 'move()' + '\n' + 'plant("玉米")' + '\n' + '# 提示：作物种下后每走一步长一点，成熟后 harvest()' + '\n' + '# 进阶：解锁传送门科技后：买门 → build_portal 放置 → pair_portal 配对 → 走过门传送' + '\n' + '# 进阶：用 while True: 写自动巡田脚本',
   javascript: '// 自由农场 · 用代码实现自动化' + '\n' + '// 示例：向前走两步，种下玉米' + '\n' + 'move();' + '\n' + 'move();' + '\n' + 'plant("玉米");' + '\n' + '// 提示：作物种下后每走一步长一点，成熟后 harvest();' + '\n' + '// 进阶：解锁传送门科技后：买门 → buildPortal 放置 → pairPortal 配对 → 走过门传送' + '\n' + '// 进阶：用 while (true) { } 写自动巡田脚本',
   cpp: '// 自由农场 · 用代码实现自动化' + '\n' + '// 示例：向前走两步，种下玉米' + '\n' + 'move();' + '\n' + 'move();' + '\n' + 'plant("玉米");' + '\n' + '// 提示：作物种下后每走一步长一点，成熟后 harvest();' + '\n' + '// 进阶：解锁传送门科技后：买门 → buildPortal 放置 → pairPortal 配对 → 走过门传送' + '\n' + '// 进阶：用 while (true) { } 写自动巡田脚本'
 };
@@ -3500,11 +3519,11 @@ function updateFreeHUD(){
 }
 
 function buyUnlock(crop){
-  const cost = crop==='洒水器' ? SPRINKLER_COST : CROP_UNLOCK[crop];
+  const cost = crop==='洒水器' ? SPRINKLER_COST : crop==='传送门' ? PORTAL_COST : CROP_UNLOCK[crop];
   if(freeState.unlocked[crop] || freeState.money < cost) return;
   freeState.money -= cost;
   freeState.unlocked[crop] = true;
-  log('ok', crop==='洒水器' ? '🚿 已解锁洒水器！现在 water() 可用了，还能用 is_drought() / is_rain() 写条件浇水' : crop==='传送门' ? '🪄 已解锁传送门科技！现在可以买传送门、用 buildPortal(x, y) 放置、用 pairPortal(x1, y1, x2, y2) 配对传送' : '🔓 已解锁「' + crop + '」！现在可以 plant("' + crop + '") 了');
+  log('ok', crop==='洒水器' ? '🚿 已解锁洒水器！现在 water() 可用了，还能用 is_drought() / is_rain() 写条件浇水' : crop==='传送门' ? '🪄 已解锁传送门科技！现在可以买传送门、用 build_portal / buildPortal(x, y) 放置、用 pair_portal / pairPortal(x1, y1, x2, y2) 配对传送' : '🔓 已解锁「' + crop + '」！现在可以 plant("' + crop + '") 了');
   updateFreeHUD(); saveGame();
   checkBadges();
 }
@@ -3513,7 +3532,7 @@ function buyPortalGate(){
   if(!freeState.unlocked['传送门'] || freeState.money < PORTAL_UNIT_COST) return;
   freeState.money -= PORTAL_UNIT_COST;
   freeState.portalStock = (freeState.portalStock||0) + 1;
-  log('ok', '🚪 买了一个传送门（🪙-' + PORTAL_UNIT_COST + '），持有 ' + freeState.portalStock + ' 个。写 buildPortal(x, y) 把它放到地图上。');
+  log('ok', '🚪 买了一个传送门（🪙-' + PORTAL_UNIT_COST + '），持有 ' + freeState.portalStock + ' 个。写 build_portal / buildPortal(x, y) 把它放到地图上。');
   updateFreeHUD(); saveGame();
 }
 
@@ -3538,12 +3557,12 @@ const EXAMPLES = [
     python:"crops = [\"玉米\", \"萝卜\", \"番茄\"]\nfor i in range(3):\n    move()\n    plant(crops[i])",
     javascript:"let crops = [\"玉米\", \"萝卜\", \"番茄\"];\nfor (let i=0; i<3; i++) {\n    move();\n    plant(crops[i]);\n}",
     cpp:"string crops[] = {\"玉米\", \"萝卜\", \"番茄\"};\nfor (int i=0; i<3; i++) {\n    move();\n    plant(crops[i]);\n}" },
-  { id:'teleport', title:'传送门 · 买门放置配对', desc:'自由模式解锁「传送门」科技 → 买门（右侧面板）→ buildPortal 放置两个门 → pairPortal 配对：机器人走到任意一扇门会瞬移到另一扇。（坐标从 0 开始）',
-    python:"# 先解锁科技并买 2 个传送门（右侧面板）\nbuildPortal(1, 0)\nbuildPortal(13, 0)\npairPortal(1, 0, 13, 0)",
+  { id:'teleport', title:'传送门 · 买门放置配对', desc:'自由模式解锁「传送门」科技 → 买门（右侧面板）→ 放置两个门 → 配对：机器人走到任意一扇门会瞬移到另一扇。（坐标从 0 开始）',
+    python:"# 先解锁科技并买 2 个传送门（右侧面板）\nbuild_portal(1, 0)\nbuild_portal(13, 0)\npair_portal(1, 0, 13, 0)",
     javascript:"// 先解锁科技并买 2 个传送门（右侧面板）\nbuildPortal(1, 0);\nbuildPortal(13, 0);\npairPortal(1, 0, 13, 0);",
     cpp:"// 先解锁科技并买 2 个传送门（右侧面板）\nbuildPortal(1, 0);\nbuildPortal(13, 0);\npairPortal(1, 0, 13, 0);" },
   { id:'gate_array', title:'传送门 × 数组 · 坐标批量管理', desc:'把门的坐标存进两个「平行数组」，循环放置、下标配对——数组和传送门一次打通：gx[i] 和 gy[i] 合起来就是第 i 扇门的位置。',
-    python:"# 平行数组：第 i 扇门的坐标 = (gx[i], gy[i])\ngx = [1, 13]\ngy = [9, 9]\nfor i in range(2):\n    buildPortal(gx[i], gy[i])\npairPortal(gx[0], gy[0], gx[1], gy[1])",
+    python:"# 平行数组：第 i 扇门的坐标 = (gx[i], gy[i])\ngx = [1, 13]\ngy = [9, 9]\nfor i in range(2):\n    build_portal(gx[i], gy[i])\npair_portal(gx[0], gy[0], gx[1], gy[1])",
     javascript:"// 平行数组：第 i 扇门的坐标 = (gx[i], gy[i])\nlet gx = [1, 13];\nlet gy = [9, 9];\nfor (let i=0; i<2; i++) {\n    buildPortal(gx[i], gy[i]);\n}\npairPortal(gx[0], gy[0], gx[1], gy[1]);",
     cpp:"// 平行数组：第 i 扇门的坐标 = (gx[i], gy[i])\nint gx[] = {1, 13};\nint gy[] = {9, 9};\nfor (int i=0; i<2; i++) {\n    buildPortal(gx[i], gy[i]);\n}\npairPortal(gx[0], gy[0], gx[1], gy[1]);" },
   { id:'func', title:'函数 · 打包动作复用', desc:'def 把几步动作打包成「招式」，喊名字就能整段执行——写一次用 N 次。',
@@ -3926,6 +3945,8 @@ function init(){
   $('btnRun').onclick = runCode;
   $('btnHelp').onclick = openHelp;
   $('btnHelpClose').onclick = closeHelp;
+  $('btnAbout').onclick = openAbout;
+  $('btnAboutClose').onclick = closeAbout;
   $('tabBadge').onclick = openBadge;
   $('btnSkin').onclick = openSkin;
   $('btnSkinClose').onclick = closeSkin;
