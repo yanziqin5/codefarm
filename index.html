@@ -464,7 +464,7 @@ main{ flex:1; display:flex; gap:0; min-height:0; }
           </div>
         </div>
         <div id="editorWrap" style="margin-top:8px;">
-          <div style="position:absolute; top:6px; right:10px; z-index:5; font-size:10px; color:#5c6370; background:#0b1220; padding:2px 8px; border-radius:6px; border:1px solid rgba(96,165,250,.22); pointer-events:none;">v25 <span id="diagInfo" style="color:#3b4252;"></span></div>
+          <div style="position:absolute; top:6px; right:10px; z-index:5; font-size:10px; color:#5c6370; background:#0b1220; padding:2px 8px; border-radius:6px; border:1px solid rgba(96,165,250,.22); pointer-events:none;">v26 <span id="diagInfo" style="color:#3b4252;"></span></div>
           <div id="lineNums"></div>
           <div class="codeArea">
             <pre id="hlLayer" aria-hidden="true"></pre>
@@ -4175,14 +4175,18 @@ function init(){
   // 编辑同步
   $('codeInput').addEventListener('input', syncEditor);
   $('codeInput').addEventListener('scroll', () => {
-    // rAF 逐帧同步：快速滑动/惯性滚动也不丢帧，行号与高亮始终对齐
+    // 双保险：每次滚动事件直接同步（保证不偏移），再用 rAF 兜底补一帧（覆盖惯性滚动间隙）
+    const st = $('codeInput').scrollTop, sl = $('codeInput').scrollLeft;
+    $('lineNums').scrollTop = st;
+    $('hlLayer').scrollTop = st;
+    $('hlLayer').scrollLeft = sl;
     if(window.__syncRAF) return;
     window.__syncRAF = requestAnimationFrame(function syncScroll(){
       window.__syncRAF = null;
-      const st = $('codeInput').scrollTop, sl = $('codeInput').scrollLeft;
-      $('lineNums').scrollTop = st;
-      $('hlLayer').scrollTop = st;
-      $('hlLayer').scrollLeft = sl;
+      const st2 = $('codeInput').scrollTop, sl2 = $('codeInput').scrollLeft;
+      $('lineNums').scrollTop = st2;
+      $('hlLayer').scrollTop = st2;
+      $('hlLayer').scrollLeft = sl2;
     });
   });
   $('codeInput').addEventListener('keydown', e => {
