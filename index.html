@@ -184,6 +184,7 @@ main{ flex:1; display:flex; gap:0; min-height:0; }
 }
 #lineNums .cur{ color:var(--green); font-weight:700; }
 #lineNums .err{ color:var(--red); font-weight:700; }
+#lineNums span{ display:block; }
 .codeArea{ position:relative; flex:1; overflow:hidden; }
 #hlLayer{
   position:absolute; inset:0; margin:0; padding:12px 14px; overflow:hidden;
@@ -3366,12 +3367,26 @@ function highlight(code, lang){
 function syncEditor(){
   const code = $('codeInput').value;
   $('hlLayer').innerHTML = highlight(code, state.lang);
-  const lines = code.split('\n').length;
+  // 行号按"显示行"生成：长行自动换行后，续行不标号、行号不错位
+  const rows = $('hlLayer').children;
   let nums = '';
-  for(let i=1;i<=lines;i++) nums += '<span>' + i + '</span>\n';
+  let num = 0, prevTop = null;
+  for(let i=0;i<rows.length;i++){
+    const top = rows[i].offsetTop;
+    if(prevTop === null){
+      num = 1;
+    } else if(top > prevTop){
+      const gap = Math.round((top - prevTop) / 24);
+      for(let g=1;g<gap;g++) nums += '<span></span>\n'; // 续行空号占位
+      num++;
+    }
+    nums += '<span>' + num + '</span>\n';
+    prevTop = top;
+  }
   $('lineNums').innerHTML = nums;
   $('lineNums').scrollTop = $('codeInput').scrollTop;
   $('hlLayer').scrollTop = $('codeInput').scrollTop;
+  $('hlLayer').scrollLeft = $('codeInput').scrollLeft;
 }
 
 /* ---------------- UI：委托面板 ---------------- */
@@ -4131,6 +4146,7 @@ function init(){
   $('codeInput').addEventListener('scroll', () => {
     $('lineNums').scrollTop = $('codeInput').scrollTop;
     $('hlLayer').scrollTop = $('codeInput').scrollTop;
+    $('hlLayer').scrollLeft = $('codeInput').scrollLeft;
   });
   $('codeInput').addEventListener('keydown', e => {
     if(e.key === 'Tab'){
