@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>码上农场 CodeFarm v21</title>
+<meta name="codefarm-ver" content="20261009-final">
+<title>码上农场 CodeFarm</title>
 <style>
 /* ============ 基础 ============ */
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -464,7 +465,6 @@ main{ flex:1; display:flex; gap:0; min-height:0; }
           </div>
         </div>
         <div id="editorWrap" style="margin-top:8px;">
-          <div style="position:absolute; top:6px; right:10px; z-index:5; font-size:10px; color:#5c6370; background:#0b1220; padding:2px 8px; border-radius:6px; border:1px solid rgba(96,165,250,.22); pointer-events:none;">v28 <span id="diagInfo" style="color:#3b4252;"></span></div>
           <div id="lineNums"></div>
           <div class="codeArea">
             <pre id="hlLayer" aria-hidden="true"></pre>
@@ -3412,16 +3412,6 @@ function syncEditor(){
   $('lineNums').scrollTop = $('codeInput').scrollTop;
   $('hlLayer').scrollTop = $('codeInput').scrollTop;
   $('hlLayer').scrollLeft = $('codeInput').scrollLeft;
-  // 自检信息（临时调试用）：显示行号计算的原始数据与实际行号容器内容
-  let tops = [];
-  for(let i=0;i<rows.length;i++) tops.push(rows[i].offsetTop);
-  const diag = document.getElementById('diagInfo');
-  if(diag){
-    let seq = [];
-    const lnEl = $('lineNums');
-    for(let i=0;i<lnEl.children.length;i++) seq.push((lnEl.children[i].textContent||'').trim() || '_');
-    diag.textContent = 'rows=' + rows.length + ' b=' + baseH + ' ln=' + seq.length + ' seq=' + seq.join(',') + ' tops=' + tops.join(',');
-  }
 }
 // 字体加载完成/窗口尺寸变化后，行折行位置可能改变，必须重算行号
 (function(){
