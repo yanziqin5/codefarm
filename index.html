@@ -464,7 +464,7 @@ main{ flex:1; display:flex; gap:0; min-height:0; }
           </div>
         </div>
         <div id="editorWrap" style="margin-top:8px;">
-          <div style="position:absolute; top:6px; right:10px; z-index:5; font-size:10px; color:#5c6370; background:#0b1220; padding:2px 8px; border-radius:6px; border:1px solid rgba(96,165,250,.22); pointer-events:none;">v22 <span id="diagInfo" style="color:#3b4252;"></span></div>
+          <div style="position:absolute; top:6px; right:10px; z-index:5; font-size:10px; color:#5c6370; background:#0b1220; padding:2px 8px; border-radius:6px; border:1px solid rgba(96,165,250,.22); pointer-events:none;">v23 <span id="diagInfo" style="color:#3b4252;"></span></div>
           <div id="lineNums"></div>
           <div class="codeArea">
             <pre id="hlLayer" aria-hidden="true"></pre>
@@ -3370,6 +3370,7 @@ function syncEditor(){
   $('hlLayer').innerHTML = highlight(code, state.lang);
   // 强制高亮层与输入框同宽，确保折行位置完全一致
   $('hlLayer').style.width = $('codeInput').clientWidth + 'px';
+  void $('hlLayer').offsetHeight; // 强制回流：确保 offsetTop 读到的是最新折行布局（WebView 缓存旧布局会读错）
   // 行号按"显示行"生成：长行自动换行后，续行不标号、行号不错位
   const rows = $('hlLayer').children;
   let nums = '';
@@ -3396,11 +3397,16 @@ function syncEditor(){
   $('lineNums').scrollTop = $('codeInput').scrollTop;
   $('hlLayer').scrollTop = $('codeInput').scrollTop;
   $('hlLayer').scrollLeft = $('codeInput').scrollLeft;
-  // 自检信息（临时调试用）：显示行号计算的原始数据
+  // 自检信息（临时调试用）：显示行号计算的原始数据与实际行号容器内容
   let tops = [];
   for(let i=0;i<rows.length;i++) tops.push(rows[i].offsetTop);
   const diag = document.getElementById('diagInfo');
-  if(diag) diag.textContent = 'rows=' + rows.length + ' b=' + baseH + ' tops=' + tops.join(',');
+  if(diag){
+    let seq = [];
+    const lnEl = $('lineNums');
+    for(let i=0;i<lnEl.children.length;i++) seq.push(lnEl.children[i].textContent || '_');
+    diag.textContent = 'rows=' + rows.length + ' b=' + baseH + ' ln=' + seq.length + ' seq=' + seq.join(',') + ' tops=' + tops.join(',');
+  }
 }
 // 字体加载完成/窗口尺寸变化后，行折行位置可能改变，必须重算行号
 (function(){
