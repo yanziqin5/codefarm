@@ -464,7 +464,7 @@ main{ flex:1; display:flex; gap:0; min-height:0; }
           </div>
         </div>
         <div id="editorWrap" style="margin-top:8px;">
-          <div style="position:absolute; top:6px; right:10px; z-index:5; font-size:10px; color:#5c6370; background:#0b1220; padding:2px 8px; border-radius:6px; border:1px solid rgba(96,165,250,.22); pointer-events:none;">v27 <span id="diagInfo" style="color:#3b4252;"></span></div>
+          <div style="position:absolute; top:6px; right:10px; z-index:5; font-size:10px; color:#5c6370; background:#0b1220; padding:2px 8px; border-radius:6px; border:1px solid rgba(96,165,250,.22); pointer-events:none;">v28 <span id="diagInfo" style="color:#3b4252;"></span></div>
           <div id="lineNums"></div>
           <div class="codeArea">
             <pre id="hlLayer" aria-hidden="true"></pre>
@@ -3394,6 +3394,21 @@ function syncEditor(){
     prevTop = top;
   }
   $('lineNums').innerHTML = nums;
+  // 底部 padding 对齐：textarea 末尾换行会多出约一行滚动高度，行号列/高亮层需补齐，否则滚到底时提前停住错位
+  (function(){
+    const ta = $('codeInput'), hl = $('hlLayer'), ln = $('lineNums');
+    const pt = parseFloat(getComputedStyle(ta).paddingTop) || 12;
+    const pb = parseFloat(getComputedStyle(ta).paddingBottom) || 12;
+    const taContent = ta.scrollHeight - pt - pb;
+    const hlPb = parseFloat(hl.style.paddingBottom) || pb;
+    const hlContent = hl.scrollHeight - pt - hlPb;
+    const diff = Math.max(0, taContent - hlContent);
+    const npb = Math.round(pb + diff);
+    if(Math.abs((parseFloat(hl.style.paddingBottom) || pb) - npb) > 1){
+      hl.style.paddingBottom = npb + 'px';
+      ln.style.paddingBottom = npb + 'px';
+    }
+  })();
   $('lineNums').scrollTop = $('codeInput').scrollTop;
   $('hlLayer').scrollTop = $('codeInput').scrollTop;
   $('hlLayer').scrollLeft = $('codeInput').scrollLeft;
